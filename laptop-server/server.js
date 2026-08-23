@@ -28,8 +28,36 @@ const CACHED_RESP  = path.join(__dirname, 'cached-response.json');
 app.use(cors());
 app.use(express.json());
 
-// Serve dashboard static files
-app.use('/dashboard', express.static(path.join(__dirname, '..', 'dashboard')));
+// Ensure all responses include charset=utf-8
+app.use((req, res, next) => {
+  const send = res.send.bind(res);
+  res.send = function (body) {
+    const ct = res.getHeader('Content-Type');
+    if (ct && typeof ct === 'string' && ct.includes('application/json') && !ct.includes('charset')) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+    if (ct && typeof ct === 'string' && ct.includes('text/html') && !ct.includes('charset')) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+    return send(body);
+  };
+  next();
+});
+
+// Serve dashboard static files with explicit charset
+app.use('/dashboard', express.static(path.join(__dirname, '..', 'dashboard'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    }
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    }
+  }
+}));
 
 // Serve individual frame files from latest package
 app.use('/frames', express.static(path.join(LATEST_DIR, 'frames')));
