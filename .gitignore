@@ -1,0 +1,7 @@
+node_modules/
+laptop-server/uploads/
+laptop-server/latest/
+.env
+*.env
+.DS_Store
+Thumbs.db

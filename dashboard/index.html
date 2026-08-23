@@ -1,0 +1,2595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapTrace AI â€” Crash Intelligence, Reconstructed.</title>
+<style>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   DESIGN SYSTEM â€” SnapTrace AI
+   AMOLED Black + Vivid Yellow + Frosted Glass
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+:root {
+  --bg:           #050505;
+  --surface:      #0B0C0F;
+  --surface-2:    #111216;
+  --surface-3:    #16181D;
+  --glass:        rgba(255,255,255,0.055);
+  --glass-strong: rgba(255,255,255,0.09);
+  --border:       rgba(255,255,255,0.10);
+  --border-strong:rgba(255,255,255,0.16);
+  --primary:      #F5C518;
+  --primary-dim:  rgba(245,197,24,0.18);
+  --primary-glow: rgba(245,197,24,0.35);
+  --text:         #F0F0F2;
+  --text-2:       #8A8D96;
+  --text-3:       #55585F;
+  --cyan:         #22D3EE;
+  --cyan-dim:     rgba(34,211,238,0.15);
+  --green:        #22C55E;
+  --green-dim:    rgba(34,197,94,0.15);
+  --red:          #EF4444;
+  --red-dim:      rgba(239,68,68,0.18);
+  --orange:       #F97316;
+  --sidebar-w:    240px;
+  --sidebar-w-sm: 60px;
+  --radius-sm:    10px;
+  --radius:       18px;
+  --radius-lg:    24px;
+  --radius-xl:    28px;
+  --trans:        0.22s cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* â”€â”€ Typography â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.t-hero    { font-size: clamp(32px,4vw,48px); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+.t-title   { font-size: clamp(26px,3vw,40px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+.t-section { font-size: clamp(18px,2vw,24px); font-weight: 700; line-height: 1.2; }
+.t-card    { font-size: clamp(15px,1.2vw,18px); font-weight: 600; }
+.t-body    { font-size: clamp(14px,1vw,16px); line-height: 1.6; }
+.t-meta    { font-size: 12px; color: var(--text-2); line-height: 1.4; }
+.t-mono    { font-family: 'JetBrains Mono','Fira Code','Cascadia Code',monospace; font-size: 12px; }
+.t-metric  { font-size: clamp(36px,5vw,56px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.t-yellow  { color: var(--primary); }
+.t-cyan    { color: var(--cyan); }
+.t-green   { color: var(--green); }
+.t-red     { color: var(--red); }
+.t-muted   { color: var(--text-2); }
+
+/* â”€â”€ Glass Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color var(--trans), box-shadow var(--trans), transform var(--trans);
+}
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+.card-strong {
+  background: var(--glass-strong);
+  border-color: var(--border-strong);
+}
+.card-yellow {
+  border-color: rgba(245,197,24,0.3);
+  box-shadow: 0 0 0 1px rgba(245,197,24,0.08) inset;
+}
+.card-red {
+  border-color: rgba(239,68,68,0.35);
+  box-shadow: 0 0 24px rgba(239,68,68,0.08);
+}
+.card-p { padding: 20px 22px; }
+.card-p-sm { padding: 14px 16px; }
+.card-p-lg { padding: 28px 30px; }
+
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  border: none; transition: all var(--trans); text-decoration: none;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--primary); color: #050505;
+}
+.btn-primary:hover { background: #FFD32A; transform: translateY(-1px); box-shadow: 0 4px 20px var(--primary-glow); }
+.btn-ghost {
+  background: var(--glass); color: var(--text); border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--glass-strong); border-color: var(--border-strong); }
+.btn-danger {
+  background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.3);
+}
+
+/* â”€â”€ Badge / Pill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.badge-red    { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(239,68,68,0.25); }
+.badge-yellow { background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(245,197,24,0.25); }
+.badge-green  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.badge-cyan   { background: var(--cyan-dim);  color: var(--cyan);  border: 1px solid rgba(34,211,238,0.25); }
+.badge-gray   { background: var(--glass);     color: var(--text-2);border: 1px solid var(--border); }
+
+/* â”€â”€ Dot pulse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.dot-pulse {
+  position: relative; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--green); flex-shrink: 0;
+}
+.dot-pulse::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 50%; background: inherit;
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+.dot-red { background: var(--red); }
+
+/* â”€â”€ Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.divider { height: 1px; background: var(--border); margin: 0; }
+
+/* â”€â”€ Skeleton loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 400px 100%;
+  animation: skeleton-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+</style>
+
+<style>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   LAYOUT â€” Sidebar + Content
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  transition: width var(--trans), transform var(--trans);
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.sidebar-logo svg { flex-shrink: 0; }
+.sidebar-logo-text { overflow: hidden; }
+.sidebar-logo-name {
+  font-size: 15px; font-weight: 800; color: var(--text);
+  letter-spacing: -0.01em; white-space: nowrap;
+}
+.sidebar-logo-tag {
+  font-size: 10px; color: var(--text-2); white-space: nowrap;
+  letter-spacing: 0.05em; text-transform: uppercase; margin-top: 1px;
+}
+
+/* â”€â”€ Nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+  overflow-y: auto;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; border: none; background: transparent;
+  color: var(--text-2); font-size: 14px; font-weight: 500;
+  transition: all var(--trans); text-align: left; width: 100%;
+  position: relative; white-space: nowrap;
+}
+.nav-item svg { flex-shrink: 0; }
+.nav-item:hover { background: var(--glass); color: var(--text); }
+.nav-item.active {
+  background: var(--primary-dim);
+  color: var(--primary);
+  border: 1px solid rgba(245,197,24,0.2);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 3px; background: var(--primary);
+  border-radius: 0 3px 3px 0;
+}
+.nav-label { overflow: hidden; transition: opacity var(--trans), width var(--trans); }
+
+/* â”€â”€ Sidebar Bottom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.sidebar-bottom {
+  padding: 14px 12px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.device-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  background: var(--glass); border: 1px solid var(--border);
+}
+.device-status-text { overflow: hidden; }
+.device-status-label { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.device-status-sub   { font-size: 10px; color: var(--text-2); white-space: nowrap; }
+.credit {
+  font-size: 10px; color: var(--text-3);
+  text-align: center; padding: 4px 0 2px;
+  letter-spacing: 0.04em;
+  white-space: nowrap; overflow: hidden;
+}
+.credit span { color: var(--text-2); }
+
+/* â”€â”€ Content area â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  transition: margin-left var(--trans);
+}
+
+/* â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#topbar {
+  height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,5,5,0.85);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 90;
+}
+.topbar-title { font-size: 17px; font-weight: 700; }
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.live-indicator {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: var(--green);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.hamburger {
+  display: none; background: none; border: none;
+  color: var(--text); cursor: pointer; padding: 6px;
+}
+
+/* â”€â”€ Page container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.page {
+  display: none;
+  padding: 28px 24px 48px;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+.page.active { display: flex; }
+
+/* â”€â”€ Grid helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.flex-row { display: flex; align-items: center; gap: 12px; }
+.flex-col  { display: flex; flex-direction: column; gap: 8px; }
+.between   { justify-content: space-between; }
+.wrap      { flex-wrap: wrap; }
+.flex-1    { flex: 1; }
+.gap-4  { gap: 4px;  }
+.gap-6  { gap: 6px;  }
+.gap-8  { gap: 8px;  }
+.gap-16 { gap: 16px; }
+.gap-24 { gap: 24px; }
+</style>
+
+<style>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   WELCOME POPUP
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#welcome-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+#welcome-overlay.visible { opacity: 1; pointer-events: all; }
+#welcome-modal {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 40px 36px 32px;
+  max-width: 440px; width: 100%;
+  text-align: center;
+  transform: translateY(20px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,197,24,0.08);
+}
+#welcome-overlay.visible #welcome-modal { transform: translateY(0) scale(1); }
+.welcome-logo-wrap {
+  width: 64px; height: 64px; margin: 0 auto 20px;
+  background: var(--primary-dim);
+  border: 1px solid rgba(245,197,24,0.3);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.welcome-title {
+  font-size: 26px; font-weight: 800;
+  color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px;
+}
+.welcome-tagline {
+  font-size: 14px; color: var(--text-2); margin-bottom: 20px; line-height: 1.5;
+}
+.welcome-pipeline {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-bottom: 28px; flex-wrap: wrap;
+}
+.pipeline-step {
+  font-size: 11px; font-weight: 600; color: var(--text-2);
+  background: var(--glass); border: 1px solid var(--border);
+  padding: 4px 10px; border-radius: 99px;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.pipeline-arrow { color: var(--text-3); font-size: 12px; }
+#welcome-cta {
+  width: 100%; padding: 13px;
+  font-size: 15px; font-weight: 700;
+  background: var(--primary); color: #050505;
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all var(--trans);
+  letter-spacing: -0.01em;
+}
+#welcome-cta:hover { background: #FFD32A; transform: translateY(-1px); box-shadow: 0 6px 24px var(--primary-glow); }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TRANSFER TIMER BANNER
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#transfer-banner {
+  position: fixed; bottom: 20px; right: 24px; z-index: 200;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  min-width: 280px;
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#transfer-banner.visible { transform: translateY(0); opacity: 1; }
+.banner-label { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.banner-pipeline {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; flex-wrap: wrap;
+}
+.pipe-step {
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 6px;
+  background: var(--glass); color: var(--text-2);
+  border: 1px solid var(--border);
+  font-size: 10px;
+}
+.pipe-step.done { background: var(--green-dim); color: var(--green); border-color: rgba(34,197,94,0.25); }
+.pipe-step.active { background: var(--primary-dim); color: var(--primary); border-color: rgba(245,197,24,0.25); }
+.pipe-chevron { color: var(--text-3); font-size: 10px; }
+.banner-timer { font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 8px; font-variant-numeric: tabular-nums; }
+.banner-done  { font-size: 13px; font-weight: 600; color: var(--green); margin-top: 6px; }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAGE 1 â€” OVERVIEW
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.crash-hero {
+  background: linear-gradient(135deg, rgba(239,68,68,0.08) 0%, var(--glass) 60%);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: var(--radius-xl);
+  padding: 32px 32px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.crash-hero::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.crash-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--red);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 12px;
+}
+.crash-exception {
+  font-size: clamp(22px,3vw,34px); font-weight: 800;
+  color: var(--text); letter-spacing: -0.02em; margin-bottom: 6px;
+  word-break: break-word;
+}
+.crash-location {
+  font-size: 14px; color: var(--text-2); font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 18px; word-break: break-all;
+}
+.crash-meta-row {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+
+/* Metric cards */
+.metric-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: all var(--trans);
+  min-height: 120px;
+}
+.metric-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.metric-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.metric-icon-yellow { background: var(--primary-dim); }
+.metric-icon-cyan   { background: var(--cyan-dim); }
+.metric-icon-red    { background: var(--red-dim); }
+.metric-icon-green  { background: var(--green-dim); }
+.metric-value { font-size: clamp(28px,3vw,40px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.metric-label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+.metric-sub   { font-size: 11px; color: var(--text-3); }
+
+/* Event pipeline */
+.event-pipeline {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 4px;
+}
+.pipeline-node {
+  flex: 1; min-width: 120px;
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 0; padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+  position: relative;
+}
+.pipeline-node:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.pipeline-node:last-child  { border-radius: 0 var(--radius) var(--radius) 0; }
+.pipeline-node:not(:last-child)::after {
+  content: 'â€º';
+  position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-3); font-size: 18px; z-index: 2;
+  background: var(--bg); padding: 2px;
+}
+.pipeline-node.done   { border-color: rgba(34,197,94,0.3); }
+.pipeline-node.active { border-color: rgba(245,197,24,0.3); background: var(--primary-dim); }
+.pipeline-node.crash  { border-color: rgba(239,68,68,0.3); background: var(--red-dim); }
+.pn-step  { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+.pn-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.pn-time  { font-size: 10px; color: var(--text-2); font-family: monospace; }
+.pn-status { font-size: 10px; font-weight: 600; }
+
+/* AI Preview card */
+.ai-preview {
+  background: linear-gradient(135deg, rgba(245,197,24,0.05) 0%, var(--glass) 60%);
+  border: 1px solid rgba(245,197,24,0.2);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+}
+.ai-preview-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--primary);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+}
+.ai-preview-text { font-size: 15px; line-height: 1.6; color: var(--text); }
+</style>
+
+<style>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAGE 2 â€” CRASH REPLAY
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.replay-container {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+.replay-viewport {
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 16/9;
+}
+.replay-frame-img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.replay-no-video {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 24px;
+  background: var(--surface-2);
+}
+.replay-frame-counter {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(0,0,0,0.7); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px 10px;
+  font-size: 11px; font-weight: 600; font-family: monospace;
+  color: var(--text);
+}
+.replay-crash-badge {
+  position: absolute; top: 12px; right: 12px;
+}
+.replay-controls {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+}
+.replay-btn {
+  background: var(--glass); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all var(--trans); flex-shrink: 0;
+}
+.replay-btn:hover { background: var(--glass-strong); border-color: var(--border-strong); }
+.replay-btn.active-btn { background: var(--primary-dim); border-color: rgba(245,197,24,0.3); color: var(--primary); }
+
+/* Timeline scrubber */
+.timeline-scrubber {
+  flex: 1; position: relative; height: 36px;
+  display: flex; align-items: center;
+}
+.scrubber-track {
+  width: 100%; height: 4px; background: var(--surface-3);
+  border-radius: 99px; position: relative; cursor: pointer;
+}
+.scrubber-fill {
+  height: 100%; background: var(--primary);
+  border-radius: 99px; transition: width 0.15s ease;
+  pointer-events: none;
+}
+.scrubber-thumb {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 14px; height: 14px; background: var(--primary);
+  border-radius: 50%; box-shadow: 0 0 8px var(--primary-glow);
+  cursor: grab; pointer-events: none;
+}
+.scrubber-marker {
+  position: absolute; top: -8px; width: 2px; height: 20px;
+  transform: translateX(-50%); border-radius: 1px; pointer-events: none;
+}
+.scrubber-marker.crash-marker { background: var(--red); }
+.scrubber-marker.start-marker { background: var(--cyan); }
+.scrubber-marker.capture-marker { background: var(--green); }
+
+/* Replay side panel */
+.replay-side { display: flex; flex-direction: column; gap: 14px; }
+.stack-trace-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stack-trace-header {
+  padding: 12px 14px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--glass); border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.stack-trace-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.stack-trace-body.expanded { max-height: 320px; overflow-y: auto; }
+.stack-trace-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; line-height: 1.7;
+  color: var(--text-2); padding: 12px 14px;
+  white-space: pre-wrap; word-break: break-all;
+}
+.st-exception { color: var(--red); }
+.st-at        { color: var(--text-3); }
+.st-class     { color: var(--cyan); }
+.st-cause     { color: var(--orange); }
+
+/* Filmstrip */
+.filmstrip {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 2px 0 6px;
+}
+.filmstrip-thumb {
+  flex-shrink: 0; width: 64px; height: 36px;
+  background: var(--surface-3); border: 2px solid transparent;
+  border-radius: 6px; cursor: pointer; overflow: hidden;
+  transition: border-color var(--trans), transform var(--trans);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--text-3); font-weight: 600;
+}
+.filmstrip-thumb:hover { border-color: var(--border-strong); transform: scaleY(1.05); }
+.filmstrip-thumb.active { border-color: var(--primary); }
+.filmstrip-thumb.crash-frame { border-color: var(--red); }
+.filmstrip-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAGE 3 â€” PERFORMANCE ANALYTICS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.chart-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px 16px;
+  overflow: hidden;
+}
+.chart-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chart-title { font-size: 15px; font-weight: 700; }
+.chart-legend {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-2);
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chart-wrap {
+  position: relative; width: 100%;
+}
+.chart-wrap canvas { width: 100% !important; display: block; }
+.chart-unavailable {
+  display: flex; align-items: center; justify-content: center;
+  height: 120px; border-radius: var(--radius-sm);
+  background: var(--glass); border: 1px dashed var(--border);
+  font-size: 13px; color: var(--text-3);
+}
+
+/* Pipeline duration bar chart */
+.pipeline-bars { display: flex; flex-direction: column; gap: 10px; }
+.pipeline-bar-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.pipeline-bar-label { font-size: 12px; color: var(--text-2); width: 90px; flex-shrink: 0; text-align: right; }
+.pipeline-bar-track {
+  flex: 1; height: 20px; background: var(--surface-3);
+  border-radius: 99px; overflow: hidden; position: relative;
+}
+.pipeline-bar-fill {
+  height: 100%; border-radius: 99px;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 8px; font-size: 10px; font-weight: 600; color: #050505;
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+  min-width: 40px;
+}
+.pipeline-bar-val { font-size: 11px; color: var(--text-2); width: 50px; flex-shrink: 0; }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAGE 4 â€” AI DIAGNOSIS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.ai-hero-card {
+  background: linear-gradient(135deg, rgba(245,197,24,0.07) 0%, var(--glass) 70%);
+  border: 1px solid rgba(245,197,24,0.25);
+  border-radius: var(--radius-xl);
+  padding: 32px 30px;
+  position: relative;
+  overflow: hidden;
+}
+.ai-hero-card::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(245,197,24,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.ai-source-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 99px;
+  margin-bottom: 14px;
+}
+.ai-source-live   { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.ai-source-cached { background: var(--cyan-dim);  color: var(--cyan);  border: 1px solid rgba(34,211,238,0.25); }
+.ai-root-cause {
+  font-size: clamp(16px,1.8vw,20px); font-weight: 600;
+  color: var(--text); line-height: 1.6; margin-bottom: 0;
+}
+.ai-section-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+}
+.ai-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-2);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.ai-section-text { font-size: 15px; line-height: 1.7; color: var(--text); }
+.evidence-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.evidence-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--text-2); line-height: 1.5;
+}
+.evidence-item::before {
+  content: 'â†’';
+  color: var(--cyan); font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PAGE 5 â€” EVENT DETAILS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.collapsible-section {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.collapsible-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; cursor: pointer;
+  transition: background var(--trans);
+}
+.collapsible-header:hover { background: var(--glass-strong); }
+.collapsible-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.collapsible-chevron {
+  transition: transform var(--trans); color: var(--text-2); font-size: 14px;
+}
+.collapsible-section.open .collapsible-chevron { transform: rotate(180deg); }
+.collapsible-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(.4,0,.2,1);
+  border-top: 0px solid var(--border);
+}
+.collapsible-section.open .collapsible-body {
+  max-height: 800px;
+  border-top-width: 1px;
+}
+.collapsible-inner { padding: 18px 20px; }
+
+/* Meta table */
+.meta-table { width: 100%; border-collapse: collapse; }
+.meta-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+.meta-table td { padding: 9px 6px; font-size: 13px; vertical-align: top; }
+.meta-table td:first-child { color: var(--text-2); width: 42%; white-space: nowrap; padding-right: 16px; }
+.meta-table td:last-child  { color: var(--text); font-weight: 500; word-break: break-all; }
+
+/* Log viewer */
+.log-viewer {
+  background: var(--surface-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px; line-height: 1.8;
+  padding: 14px 16px;
+  max-height: 420px; overflow-y: auto;
+  border-radius: var(--radius-sm);
+}
+.log-line { white-space: pre-wrap; word-break: break-all; }
+.log-error  { color: #ff6b6b; }
+.log-warn   { color: #ffd93d; }
+.log-info   { color: var(--text-2); }
+.log-debug  { color: var(--text-3); }
+.log-snap   { color: var(--cyan); }
+.log-fatal  { color: var(--red); font-weight: 700; }
+
+/* Thumbnail grid */
+.thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+.thumb-item {
+  aspect-ratio: 9/16; background: var(--surface-3);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  cursor: pointer; overflow: hidden;
+  transition: all var(--trans);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--text-3);
+  position: relative;
+}
+.thumb-item:hover { border-color: var(--border-strong); transform: scale(1.03); }
+.thumb-item.crash-thumb { border-color: rgba(239,68,68,0.5); }
+.thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+.thumb-label {
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.7); font-size: 9px; font-weight: 600;
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap; color: var(--text);
+}
+</style>
+
+<style>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (max-width: 1100px) {
+  .replay-container { grid-template-columns: 1fr; }
+  .replay-side { flex-direction: row; flex-wrap: wrap; }
+  .replay-side > * { flex: 1 1 280px; }
+}
+
+@media (max-width: 900px) {
+  :root { --sidebar-w: 0px; }
+  #sidebar {
+    transform: translateX(-240px);
+    width: 240px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
+  #sidebar.open { transform: translateX(0); }
+  #content { margin-left: 0; }
+  .hamburger { display: flex; }
+  #mobile-nav { display: flex; }
+  .page { padding: 20px 16px 80px; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .crash-hero { padding: 20px 18px; }
+  .ai-hero-card { padding: 22px 18px; }
+  .event-pipeline { flex-direction: column; }
+  .pipeline-node:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+  .pipeline-node:last-child  { border-radius: 0 0 var(--radius) var(--radius); }
+  .pipeline-node:not(:last-child)::after { content: 'â†“'; right: auto; left: 50%; bottom: -12px; top: auto; transform: translateX(-50%); }
+  #topbar { padding: 0 14px; }
+  .page { padding: 16px 12px 80px; gap: 16px; }
+  #transfer-banner { right: 12px; left: 12px; min-width: unset; bottom: 16px; }
+}
+
+/* â”€â”€ Mobile bottom nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#mobile-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+}
+.mobile-nav-items {
+  display: flex; justify-content: space-around;
+}
+.mobile-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; border: none; background: transparent;
+  color: var(--text-2); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  transition: all var(--trans); min-width: 56px;
+}
+.mobile-nav-item.active { color: var(--primary); }
+.mobile-nav-item svg { transition: transform var(--trans); }
+.mobile-nav-item.active svg { transform: scale(1.1); }
+
+/* â”€â”€ Sidebar overlay (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 99;
+  background: rgba(0,0,0,0.5);
+}
+#sidebar-overlay.visible { display: block; }
+
+/* â”€â”€ Page fade transition â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page.active { animation: page-in 0.25s ease; }
+
+/* â”€â”€ AI loading animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@keyframes ai-typing {
+  0%, 60%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+  30%           { opacity: 1;   transform: scaleY(1); }
+}
+.ai-loading {
+  display: inline-flex; align-items: flex-end; gap: 3px; height: 16px;
+}
+.ai-loading span {
+  display: block; width: 3px; height: 12px; background: var(--primary);
+  border-radius: 99px; animation: ai-typing 1.2s ease-in-out infinite;
+}
+.ai-loading span:nth-child(2) { animation-delay: 0.15s; }
+.ai-loading span:nth-child(3) { animation-delay: 0.30s; }
+
+/* â”€â”€ Tooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.chart-tooltip {
+  position: fixed; pointer-events: none;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: 10px; padding: 8px 12px;
+  font-size: 12px; z-index: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  transform: translate(-50%, -110%);
+  white-space: nowrap; opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.chart-tooltip.visible { opacity: 1; }
+.tooltip-label { font-size: 10px; color: var(--text-2); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.tooltip-row   { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.tooltip-dot   { width: 6px; height: 6px; border-radius: 50%; }
+
+/* â”€â”€ Lightbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#lightbox {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.92);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+  padding: 20px;
+}
+#lightbox.visible { opacity: 1; pointer-events: all; }
+#lightbox img {
+  max-width: 100%; max-height: 90vh;
+  object-fit: contain; border-radius: var(--radius);
+  box-shadow: 0 0 80px rgba(0,0,0,0.8);
+}
+#lightbox-close {
+  position: absolute; top: 20px; right: 24px;
+  background: var(--glass-strong); border: 1px solid var(--border);
+  color: var(--text); border-radius: 50%; width: 36px; height: 36px;
+  cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+</style>
+</head>
+<body>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     WELCOME POPUP
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="welcome-overlay">
+  <div id="welcome-modal">
+    <div class="welcome-logo-wrap">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <path d="M6 26 C6 26 10 18 17 17 C24 16 28 8 28 8" stroke="#F5C518" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="17" cy="17" r="3.5" fill="#F5C518"/>
+        <path d="M17 13.5 L17 6" stroke="#F5C518" stroke-width="2" stroke-linecap="round"/>
+        <path d="M20.5 17 L27 17" stroke="rgba(245,197,24,0.5)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="28" cy="8" r="2" fill="#EF4444"/>
+      </svg>
+    </div>
+    <div class="welcome-title">Welcome to SnapTrace AI</div>
+    <div class="welcome-tagline">Your crash has been reconstructed.<br>Every frame, every log, every cause â€” decoded.</div>
+    <div class="welcome-pipeline">
+      <span class="pipeline-step">Capture</span>
+      <span class="pipeline-arrow">â†’</span>
+      <span class="pipeline-step">Context</span>
+      <span class="pipeline-arrow">â†’</span>
+      <span class="pipeline-step">Intelligence</span>
+    </div>
+    <button id="welcome-cta">View Crash â†’</button>
+  </div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     SIDEBAR OVERLAY (mobile)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="sidebar-overlay"></div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     LIGHTBOX
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="lightbox">
+  <button id="lightbox-close">âœ•</button>
+  <img id="lightbox-img" src="" alt="Frame">
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     CHART TOOLTIP
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="chart-tooltip" id="chart-tooltip">
+  <div class="tooltip-label" id="tt-label"></div>
+  <div id="tt-rows"></div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     TRANSFER TIMER BANNER
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="transfer-banner">
+  <div class="banner-label">Transfer Pipeline</div>
+  <div class="banner-pipeline" id="banner-pipeline">
+    <div class="pipe-step" id="pipe-capture">ðŸ“± Capture</div>
+    <span class="pipe-chevron">â€º</span>
+    <div class="pipe-step" id="pipe-package">ðŸ“¦ Package</div>
+    <span class="pipe-chevron">â€º</span>
+    <div class="pipe-step" id="pipe-upload">â¬† Upload</div>
+    <span class="pipe-chevron">â€º</span>
+    <div class="pipe-step" id="pipe-render">ðŸ–¥ Render</div>
+  </div>
+  <div class="banner-timer" id="banner-timer">0.00s</div>
+  <div class="banner-done" id="banner-done" style="display:none"></div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     MAIN APP
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <a class="sidebar-logo" href="#" onclick="return false">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="9" fill="rgba(245,197,24,0.12)"/>
+        <path d="M5 24 C5 24 9 16 16 15 C23 14 27 6 27 6" stroke="#F5C518" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="16" cy="15" r="3" fill="#F5C518"/>
+        <circle cx="27" cy="6" r="2" fill="#EF4444"/>
+      </svg>
+      <div class="sidebar-logo-text">
+        <div class="sidebar-logo-name">SnapTrace AI</div>
+        <div class="sidebar-logo-tag">Crash Intelligence</div>
+      </div>
+    </a>
+
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-page="overview">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="nav-label">Overview</span>
+      </button>
+      <button class="nav-item" data-page="replay">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span class="nav-label">Crash Replay</span>
+      </button>
+      <button class="nav-item" data-page="analytics">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="nav-label">Performance</span>
+      </button>
+      <button class="nav-item" data-page="diagnosis">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span class="nav-label">AI Diagnosis</span>
+      </button>
+      <button class="nav-item" data-page="details">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span class="nav-label">Event Details</span>
+      </button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="device-status">
+        <div class="dot-pulse" id="sidebar-dot"></div>
+        <div class="device-status-text">
+          <div class="device-status-label" id="sidebar-device">Loadingâ€¦</div>
+          <div class="device-status-sub" id="sidebar-device-sub">Android Â· Connecting</div>
+        </div>
+      </div>
+      <div class="credit">Design by <span>Team Cosmosium</span></div>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- TOP BAR -->
+    <header id="topbar">
+      <div class="flex-row gap-8">
+        <button class="hamburger" id="hamburger-btn" aria-label="Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title" id="topbar-title">Overview</span>
+      </div>
+      <div class="topbar-right">
+        <div class="live-indicator">
+          <div class="dot-pulse"></div>
+          <span id="live-label">LIVE</span>
+        </div>
+        <div class="badge badge-red" id="topbar-crash-badge">
+          <span>âš¡</span> CRASH DETECTED
+        </div>
+      </div>
+    </header>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         PAGE 1 â€” OVERVIEW
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <main class="page active" id="page-overview">
+
+      <!-- Crash Hero -->
+      <div class="crash-hero">
+        <div class="crash-label">
+          <div class="dot-pulse dot-red"></div>
+          CRASH DETECTED
+        </div>
+        <div class="crash-exception" id="ov-exception">NullPointerException</div>
+        <div class="crash-location" id="ov-location">com.snaptrace.demoapp.MainActivity.updateCounterDisplay Â· line 87</div>
+        <div class="crash-meta-row">
+          <span class="badge badge-red" id="ov-trigger-badge">âš¡ Crash Trigger</span>
+          <span class="badge badge-gray" id="ov-device-badge">iQOO Neo 9 Pro</span>
+          <span class="badge badge-gray" id="ov-android-badge">Android 14</span>
+          <span class="badge badge-yellow" id="ov-time-badge">â€”</span>
+        </div>
+      </div>
+
+      <!-- Metric Cards -->
+      <div class="grid-4" id="ov-metrics">
+        <div class="metric-card">
+          <div class="flex-row gap-8">
+            <div class="metric-icon metric-icon-yellow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5C518" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+            </div>
+            <span class="t-meta">Used RAM</span>
+          </div>
+          <div class="metric-value t-yellow" id="ov-mem-used">8,876</div>
+          <div class="metric-label">MB Â· <span id="ov-mem-pct">72%</span> of <span id="ov-mem-total">12,288 MB</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex-row gap-8">
+            <div class="metric-icon metric-icon-red">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+            </div>
+            <span class="t-meta">CPU Temp</span>
+          </div>
+          <div class="metric-value t-red" id="ov-cpu-temp">41.3</div>
+          <div class="metric-label">Â°C Â· <span id="ov-thermal-label">MODERATE</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex-row gap-8">
+            <div class="metric-icon metric-icon-cyan">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <span class="t-meta">Avg FPS</span>
+          </div>
+          <div class="metric-value t-cyan" id="ov-fps">58.4</div>
+          <div class="metric-label"><span id="ov-responsiveness">Stable</span> Â· <span id="ov-dropped">7 dropped</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="flex-row gap-8">
+            <div class="metric-icon metric-icon-green">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round"><polyline points="22 2 13.5 10.5 8 5"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <span class="t-meta">Upload</span>
+          </div>
+          <div class="metric-value t-green" id="ov-upload">70</div>
+          <div class="metric-label">ms Â· <span id="ov-transfer">349 ms total</span></div>
+        </div>
+      </div>
+
+      <!-- Capture Status -->
+      <div class="card card-p flex-col gap-8">
+        <div class="flex-row between wrap gap-8">
+          <span class="t-section" style="font-size:16px">Capture Status</span>
+          <span class="badge badge-green" id="ov-capture-method">Screenshot Burst Â· 14 frames</span>
+        </div>
+        <div class="flex-row gap-8" style="font-size:13px; color:var(--text-2)">
+          <span>Package: <strong id="ov-pkg-size" class="t-yellow">â€”</strong></span>
+          <span style="color:var(--border)">|</span>
+          <span>Capture: <strong id="ov-cap-dur" class="t-yellow">â€”</strong></span>
+          <span style="color:var(--border)">|</span>
+          <span>Upload: <strong id="ov-upl-dur" class="t-green">â€”</strong></span>
+          <span style="color:var(--border)">|</span>
+          <span>Total: <strong id="ov-tot-dur" class="t-green">â€”</strong></span>
+        </div>
+      </div>
+
+      <!-- Event Pipeline -->
+      <div class="flex-col gap-8">
+        <div class="t-section" style="font-size:16px">Capture Pipeline</div>
+        <div class="event-pipeline" id="event-pipeline">
+          <div class="pipeline-node done">
+            <div class="pn-step">01</div>
+            <div class="pn-label">User Action</div>
+            <div class="pn-time" id="pn-t0">â€”</div>
+            <div class="pn-status t-green">âœ“ Button tap</div>
+          </div>
+          <div class="pipeline-node crash">
+            <div class="pn-step">02</div>
+            <div class="pn-label">Crash</div>
+            <div class="pn-time" id="pn-t1">â€”</div>
+            <div class="pn-status t-red">âš¡ NPE thrown</div>
+          </div>
+          <div class="pipeline-node done">
+            <div class="pn-step">03</div>
+            <div class="pn-label">Capture</div>
+            <div class="pn-time" id="pn-t2">â€”</div>
+            <div class="pn-status t-green" id="pn-s2">âœ“ 14 frames</div>
+          </div>
+          <div class="pipeline-node done">
+            <div class="pn-step">04</div>
+            <div class="pn-label">Package</div>
+            <div class="pn-time" id="pn-t3">â€”</div>
+            <div class="pn-status t-green" id="pn-s3">âœ“ ZIP ready</div>
+          </div>
+          <div class="pipeline-node done">
+            <div class="pn-step">05</div>
+            <div class="pn-label">Upload</div>
+            <div class="pn-time" id="pn-t4">â€”</div>
+            <div class="pn-status t-green" id="pn-s4">âœ“ HTTP 200</div>
+          </div>
+          <div class="pipeline-node active">
+            <div class="pn-step">06</div>
+            <div class="pn-label">AI Analysis</div>
+            <div class="pn-time" id="pn-t5">â€”</div>
+            <div class="pn-status t-yellow">âš¡ Complete</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Preview -->
+      <div class="ai-preview">
+        <div class="ai-preview-label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          AI Root Cause â€” Preview
+        </div>
+        <div class="ai-preview-text" id="ov-ai-preview">
+          <div class="ai-loading"><span></span><span></span><span></span></div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn btn-primary" onclick="navigate('diagnosis')">Open AI Diagnosis â†’</button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         PAGE 2 â€” CRASH REPLAY
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <main class="page" id="page-replay">
+
+      <div class="flex-row between wrap gap-8">
+        <div class="flex-col gap-4">
+          <div class="t-title">Crash Replay</div>
+          <div class="t-meta" id="rp-subtitle">Screenshot burst Â· <span id="rp-frame-total">14</span> frames @ ~2 fps</div>
+        </div>
+        <div class="flex-row gap-8 wrap">
+          <span class="badge badge-red" id="rp-crash-badge">âš¡ Crash Frame: #<span id="rp-crash-frame-num">11</span></span>
+          <span class="badge badge-cyan" id="rp-method-badge">updateCounterDisplay()</span>
+        </div>
+      </div>
+
+      <div class="replay-container">
+        <!-- Viewport -->
+        <div class="flex-col gap-8">
+          <div class="replay-viewport" id="replay-viewport">
+            <div class="replay-no-video" id="replay-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <div style="font-size:13px; color:var(--text-3); text-align:center">Screenshot frame sequence<br><span style="font-size:11px">Frames load when server is running</span></div>
+            </div>
+            <img id="replay-frame-img" class="replay-frame-img" src="" alt="" style="display:none" onerror="this.style.display='none'; document.getElementById('replay-placeholder').style.display='flex'">
+            <div class="replay-frame-counter" id="replay-counter">Frame 1 / 14</div>
+            <div class="replay-crash-badge" id="replay-crash-badge-overlay" style="display:none">
+              <span class="badge badge-red">âš¡ CRASH FRAME</span>
+            </div>
+          </div>
+
+          <!-- Controls + scrubber -->
+          <div class="replay-controls">
+            <button class="replay-btn" id="rp-prev" title="Previous frame">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="replay-btn" id="rp-play" title="Play/Pause">
+              <svg id="rp-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <button class="replay-btn" id="rp-next" title="Next frame">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="timeline-scrubber" id="scrubber-wrap">
+              <div class="scrubber-track" id="scrubber-track">
+                <div class="scrubber-fill" id="scrubber-fill" style="width:0%"></div>
+                <!-- markers injected by JS -->
+                <div class="scrubber-thumb" id="scrubber-thumb" style="left:0%"></div>
+              </div>
+            </div>
+            <span style="font-size:11px; color:var(--text-2); font-family:monospace; white-space:nowrap" id="rp-ts-label">t+0.0s</span>
+          </div>
+
+          <!-- Filmstrip -->
+          <div class="filmstrip" id="filmstrip">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- Side panel -->
+        <div class="replay-side">
+          <!-- Crash Signature -->
+          <div class="card card-p">
+            <div class="t-card" style="margin-bottom:12px; display:flex; align-items:center; gap:8px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Crash Signature
+            </div>
+            <div class="flex-col gap-8">
+              <div>
+                <div class="t-meta" style="margin-bottom:3px">Exception</div>
+                <div style="font-size:13px; font-weight:700; color:var(--red)" id="rp-exception">NullPointerException</div>
+              </div>
+              <div>
+                <div class="t-meta" style="margin-bottom:3px">Class</div>
+                <div style="font-size:12px; font-family:monospace; color:var(--cyan); word-break:break-all" id="rp-class">MainActivity</div>
+              </div>
+              <div>
+                <div class="t-meta" style="margin-bottom:3px">Method Â· Line</div>
+                <div style="font-size:12px; font-family:monospace; color:var(--text)" id="rp-method">updateCounterDisplay Â· :87</div>
+              </div>
+              <div>
+                <div class="t-meta" style="margin-bottom:3px">Timestamp</div>
+                <div style="font-size:12px; color:var(--text-2)" id="rp-time">â€”</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stack Trace -->
+          <div class="stack-trace-box">
+            <div class="stack-trace-header" id="st-toggle">
+              <div class="t-card" style="font-size:13px; display:flex; align-items:center; gap:6px">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                Stack Trace
+              </div>
+              <span style="font-size:11px; color:var(--text-2)">â–¼ expand</span>
+            </div>
+            <div class="stack-trace-body" id="st-body">
+              <pre class="stack-trace-text" id="st-content">Loadingâ€¦</pre>
+            </div>
+          </div>
+
+          <!-- Responsiveness -->
+          <div class="card card-p-sm">
+            <div class="flex-row between">
+              <div>
+                <div class="t-meta">Responsiveness</div>
+                <div style="font-size:20px; font-weight:800; color:var(--cyan)" id="rp-fps-val">58.4 FPS</div>
+              </div>
+              <span class="badge badge-green" id="rp-resp-badge">Stable</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         PAGE 3 â€” PERFORMANCE ANALYTICS
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <main class="page" id="page-analytics">
+
+      <div class="flex-col gap-4">
+        <div class="t-title">Performance Analytics</div>
+        <div class="t-meta">Data from this capture session only â€” no historical fabrication</div>
+      </div>
+
+      <!-- Compact metric cards -->
+      <div class="grid-4" id="pa-metrics">
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-yellow" style="width:28px;height:28px;border-radius:7px;margin-bottom:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F5C518" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <div class="metric-value t-yellow" style="font-size:clamp(24px,3vw,36px)" id="pa-peak-mem">â€”</div>
+          <div class="metric-label">Peak RAM (MB)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-red" style="width:28px;height:28px;border-radius:7px;margin-bottom:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+          </div>
+          <div class="metric-value t-red" style="font-size:clamp(24px,3vw,36px)" id="pa-cpu-temp">â€”</div>
+          <div class="metric-label">CPU Temp (Â°C)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-cyan" style="width:28px;height:28px;border-radius:7px;margin-bottom:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="metric-value t-cyan" style="font-size:clamp(24px,3vw,36px)" id="pa-fps">â€”</div>
+          <div class="metric-label">Avg FPS</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-green" style="width:28px;height:28px;border-radius:7px;margin-bottom:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          </div>
+          <div class="metric-value t-green" style="font-size:clamp(24px,3vw,36px)" id="pa-frames">â€”</div>
+          <div class="metric-label">Frames Captured</div>
+        </div>
+      </div>
+
+      <!-- Memory chart -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">Memory Usage</div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>Used RAM (MB)</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:180px">
+          <canvas id="chart-memory"></canvas>
+        </div>
+      </div>
+
+      <!-- Thermal chart -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">Thermal Timeline</div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>CPU</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>GPU</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>Battery</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-thermal"></canvas>
+        </div>
+      </div>
+
+      <!-- FPS chart -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">FPS / Responsiveness</div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>FPS</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.5)"></div>Crash point</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:160px">
+          <canvas id="chart-fps"></canvas>
+        </div>
+      </div>
+
+      <!-- Capture pipeline duration -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">Capture Pipeline Duration</div>
+          <div class="t-meta">Time from crash â†’ dashboard render</div>
+        </div>
+        <div class="pipeline-bars" id="pipeline-bars" style="padding:8px 0 4px">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         PAGE 4 â€” AI DIAGNOSIS
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <main class="page" id="page-diagnosis">
+
+      <div class="flex-col gap-4">
+        <div class="t-title">AI Diagnosis</div>
+        <div class="t-meta">Analysis derived from stack trace, logs, and system telemetry of this capture</div>
+      </div>
+
+      <!-- Root cause hero -->
+      <div class="ai-hero-card">
+        <div class="ai-source-badge ai-source-cached" id="diag-source-badge">âš¡ Cached Analysis</div>
+        <div class="t-meta" style="margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700">Root Cause</div>
+        <div class="ai-root-cause" id="diag-root-cause">
+          <div class="ai-loading"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Why it happened -->
+      <div class="ai-section-card">
+        <div class="ai-section-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Why It Happened â€” Evidence
+        </div>
+        <ul class="evidence-list" id="diag-evidence">
+          <li class="evidence-item">Loading analysisâ€¦</li>
+        </ul>
+      </div>
+
+      <!-- Suggested fix -->
+      <div class="ai-section-card" style="border-color:rgba(34,197,94,0.2); background:linear-gradient(135deg,rgba(34,197,94,0.04),var(--glass))">
+        <div class="ai-section-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Suggested Fix
+        </div>
+        <div class="ai-section-text" id="diag-fix">
+          <div class="ai-loading"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Stack context -->
+      <div class="ai-section-card">
+        <div class="ai-section-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Crash Location
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <div class="flex-row gap-8 wrap">
+            <span class="badge badge-red" id="diag-exception-badge">NullPointerException</span>
+            <span class="badge badge-cyan" id="diag-class-badge">MainActivity</span>
+            <span class="badge badge-gray" id="diag-method-badge">updateCounterDisplay Â· :87</span>
+          </div>
+          <div style="font-size:13px; color:var(--text-2); line-height:1.6" id="diag-message">
+            Attempt to invoke virtual method on a null object reference
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         PAGE 5 â€” EVENT DETAILS
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <main class="page" id="page-details">
+
+      <div class="flex-col gap-4">
+        <div class="t-title">Event Details</div>
+        <div class="t-meta">Complete capture record â€” all data from this session</div>
+      </div>
+
+      <!-- Crash Metadata -->
+      <div class="collapsible-section open" id="col-metadata">
+        <div class="collapsible-header" onclick="toggleCollapsible('col-metadata')">
+          <div class="collapsible-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Crash Metadata
+          </div>
+          <span class="collapsible-chevron">â–¼</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="collapsible-inner">
+            <table class="meta-table" id="meta-table">
+              <tr><td>Capture ID</td><td id="mt-id">â€”</td></tr>
+              <tr><td>Timestamp</td><td id="mt-ts">â€”</td></tr>
+              <tr><td>Exception</td><td id="mt-exc">â€”</td></tr>
+              <tr><td>Class</td><td id="mt-class">â€”</td></tr>
+              <tr><td>Method Â· Line</td><td id="mt-method">â€”</td></tr>
+              <tr><td>Device</td><td id="mt-device">â€”</td></tr>
+              <tr><td>Android</td><td id="mt-android">â€”</td></tr>
+              <tr><td>App Package</td><td id="mt-pkg">â€”</td></tr>
+              <tr><td>App Version</td><td id="mt-ver">â€”</td></tr>
+              <tr><td>Trigger</td><td id="mt-trigger">â€”</td></tr>
+              <tr><td>Capture Method</td><td id="mt-capture">â€”</td></tr>
+              <tr><td>Frame Count</td><td id="mt-frames">â€”</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stack Trace -->
+      <div class="collapsible-section" id="col-stack">
+        <div class="collapsible-header" onclick="toggleCollapsible('col-stack')">
+          <div class="collapsible-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Full Stack Trace
+          </div>
+          <span class="collapsible-chevron">â–¼</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="collapsible-inner" style="padding:0">
+            <pre class="log-viewer" id="details-stack">Loadingâ€¦</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Application Logs -->
+      <div class="collapsible-section" id="col-logs">
+        <div class="collapsible-header" onclick="toggleCollapsible('col-logs')">
+          <div class="collapsible-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Application Logs
+            <span class="badge badge-gray" style="font-size:10px; padding:2px 7px">~50 lines</span>
+          </div>
+          <span class="collapsible-chevron">â–¼</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="collapsible-inner" style="padding:0">
+            <div class="log-viewer" id="details-logs">Loadingâ€¦</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Frame Thumbnails -->
+      <div class="collapsible-section open" id="col-frames">
+        <div class="collapsible-header" onclick="toggleCollapsible('col-frames')">
+          <div class="collapsible-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Captured Frames
+            <span class="badge badge-gray" style="font-size:10px; padding:2px 7px" id="col-frame-count">14 frames</span>
+          </div>
+          <span class="collapsible-chevron">â–¼</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="collapsible-inner">
+            <div class="thumb-grid" id="details-thumbs">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Package Info -->
+      <div class="collapsible-section open" id="col-package">
+        <div class="collapsible-header" onclick="toggleCollapsible('col-package')">
+          <div class="collapsible-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Package Info
+          </div>
+          <span class="collapsible-chevron">â–¼</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="collapsible-inner">
+            <table class="meta-table" id="pkg-table">
+              <tr><td>Package Size</td><td id="pt-size">â€”</td></tr>
+              <tr><td>Capture Duration</td><td id="pt-cap">â€”</td></tr>
+              <tr><td>Package Duration</td><td id="pt-pkg">â€”</td></tr>
+              <tr><td>Upload Duration</td><td id="pt-upl">â€”</td></tr>
+              <tr><td>Total Transfer</td><td id="pt-tot">â€”</td></tr>
+              <tr><td>Server IP</td><td id="pt-ip">â€”</td></tr>
+              <tr><td>Network</td><td id="pt-net">â€”</td></tr>
+              <tr><td>Files in ZIP</td><td id="pt-files">manifest.json, stack_trace.txt, logs.txt, 14Ã— frame_NNN.jpg</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- Mobile bottom nav -->
+<nav id="mobile-nav">
+  <div class="mobile-nav-items">
+    <button class="mobile-nav-item active" data-page="overview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </button>
+    <button class="mobile-nav-item" data-page="replay">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Replay
+    </button>
+    <button class="mobile-nav-item" data-page="analytics">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Perf
+    </button>
+    <button class="mobile-nav-item" data-page="diagnosis">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      AI
+    </button>
+    <button class="mobile-nav-item" data-page="details">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Details
+    </button>
+  </div>
+</nav>
+
+<script>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SNAPTRACE AI â€” DASHBOARD JS
+   All data from server /api/latest â†’ manifest.json
+   Falls back to embedded mock if server unreachable
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+'use strict';
+
+// â”€â”€â”€ Embedded mock (identical to mock-data/manifest.json) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const MOCK = {"schema_version":"1.0","capture_id":"snap_20260823_110432_a7f2","timestamp":"2026-08-23T11:04:32.817Z","trigger_type":"crash","device_model":"iQOO Neo 9 Pro","device_brand":"iQOO","android_version":"14","sdk_version":34,"app_package":"com.snaptrace.demoapp","app_version":"1.2.0","app_version_code":12,"exception_type":"NullPointerException","exception_message":"Attempt to invoke virtual method 'void android.widget.TextView.setText(java.lang.CharSequence)' on a null object reference","exception_class":"com.snaptrace.demoapp.MainActivity","exception_method":"updateCounterDisplay","exception_line":87,"crash_timestamp":"2026-08-23T11:04:30.112Z","capture_start_timestamp":"2026-08-23T11:04:30.115Z","capture_end_timestamp":"2026-08-23T11:04:32.201Z","capture_duration_ms":2086,"package_timestamp":"2026-08-23T11:04:32.410Z","package_duration_ms":209,"upload_start_timestamp":"2026-08-23T11:04:32.411Z","upload_end_timestamp":"2026-08-23T11:04:32.481Z","upload_duration_ms":70,"transfer_total_ms":349,"render_complete_timestamp":"2026-08-23T11:04:32.817Z","memory":{"total_ram_mb":12288,"available_ram_mb":3412,"used_ram_mb":8876,"low_memory":false,"threshold_mb":384,"heap_allocated_mb":48.2,"heap_max_mb":512,"native_heap_mb":31.7,"series":[{"t":0,"used":7820},{"t":500,"used":7934},{"t":1000,"used":8102},{"t":1500,"used":8311},{"t":2000,"used":8489},{"t":2500,"used":8604},{"t":3000,"used":8712},{"t":3500,"used":8790},{"t":4000,"used":8801},{"t":4500,"used":8823},{"t":5000,"used":8840},{"t":5500,"used":8858},{"t":6000,"used":8864},{"t":6500,"used":8871},{"t":7000,"used":8876}]},"thermal":{"status":2,"status_label":"MODERATE","cpu_temp_c":41.3,"gpu_temp_c":38.7,"battery_temp_c":33.1,"series":[{"t":0,"cpu":36.1,"gpu":33.2,"battery":30.4},{"t":1000,"cpu":37.4,"gpu":34.1,"battery":31.0},{"t":2000,"cpu":38.2,"gpu":35.3,"battery":31.5},{"t":3000,"cpu":39.1,"gpu":36.4,"battery":31.9},{"t":4000,"cpu":39.8,"gpu":37.0,"battery":32.3},{"t":5000,"cpu":40.4,"gpu":37.9,"battery":32.7},{"t":6000,"cpu":40.9,"gpu":38.3,"battery":33.0},{"t":7000,"cpu":41.3,"gpu":38.7,"battery":33.1}]},"performance":{"avg_fps":58.4,"min_fps":42.0,"max_fps":60.0,"frame_count":408,"dropped_frames":7,"jank_count":3,"responsiveness":"Stable","series":[{"t":0,"fps":60},{"t":500,"fps":60},{"t":1000,"fps":59},{"t":1500,"fps":60},{"t":2000,"fps":58},{"t":2500,"fps":57},{"t":3000,"fps":60},{"t":3500,"fps":55},{"t":4000,"fps":42},{"t":4500,"fps":48},{"t":5000,"fps":57},{"t":5500,"fps":59},{"t":6000,"fps":60},{"t":6500,"fps":60},{"t":7000,"fps":60}]},"capture_method":"screenshot_burst","frame_count":14,"frame_files":["frame_000.jpg","frame_001.jpg","frame_002.jpg","frame_003.jpg","frame_004.jpg","frame_005.jpg","frame_006.jpg","frame_007.jpg","frame_008.jpg","frame_009.jpg","frame_010.jpg","frame_011.jpg","frame_012.jpg","frame_013.jpg"],"crash_frame_index":11,"stack_trace_file":"stack_trace.txt","logs_file":"logs.txt","package_size_bytes":284672,"network_ssid":"SnapTrace-Lab-5G","server_ip":"192.168.1.101","server_port":3000};
+
+const MOCK_AI = {"root_cause":"A NullPointerException was thrown in MainActivity.updateCounterDisplay() because the counterTextView reference was null at call time â€” the view was not properly retained after a layout configuration change, causing the field to be stale when the crash button's onClick handler fired.","suggested_fix":"Move the TextView reference assignment into onViewCreated() or re-query it in updateCounterDisplay() using findViewById() each time, and add a null-guard (if counterTextView != null) before calling setText() to prevent the crash if the view hierarchy is unexpectedly recycled.","analysis_source":"cached","evidence":["NPE at MainActivity.kt:87 in updateCounterDisplay()","View reference null â€” not reassigned after lifecycle event","Crash triggered by user interaction (onClick at line 64)","Memory pressure at time of crash: 8876 MB / 12288 MB used"]};
+
+const MOCK_STACK = `FATAL EXCEPTION: main\nProcess: com.snaptrace.demoapp, PID: 18432\njava.lang.NullPointerException: Attempt to invoke virtual method 'void android.widget.TextView.setText(java.lang.CharSequence)' on a null object reference\n\tat com.snaptrace.demoapp.MainActivity.updateCounterDisplay(MainActivity.kt:87)\n\tat com.snaptrace.demoapp.MainActivity.onCrashButtonClicked(MainActivity.kt:64)\n\tat com.snaptrace.demoapp.MainActivity$$ExternalSyntheticLambda0.onClick(D8$$SyntheticClass:0)\n\tat android.view.View.performClick(View.java:7461)\n\tat android.view.View.performClickInternal(View.java:7438)\n\tat android.view.View$PerformClick.run(View.java:28710)\n\tat android.os.Handler.handleCallback(Handler.java:938)\n\tat android.os.Handler.dispatchMessage(Handler.java:99)\n\tat android.os.Looper.loopOnce(Looper.java:201)\n\tat android.os.Looper.loop(Looper.java:288)\n\tat android.app.ActivityThread.main(ActivityThread.java:7872)\n\tat java.lang.reflect.Method.invoke(Native Method)\n\tat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)\n\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)`;
+
+const MOCK_LOGS = `--------- beginning of main\n08-23 11:04:23.101  I SnapTrace: SDK initialized. Package: com.snaptrace.demoapp v1.2.0\n08-23 11:04:23.301  I MainActivity: onCreate() called\n08-23 11:04:23.601  I MainActivity: UI setup complete. Counter started.\n08-23 11:04:24.112  D SnapTrace: Frame buffer rolling. Allocated 8 slots at 720p.\n08-23 11:04:24.604  D MainActivity: Counter tick: 1\n08-23 11:04:25.103  D MainActivity: Counter tick: 2\n08-23 11:04:25.611  D MainActivity: Counter tick: 3\n08-23 11:04:26.108  D MainActivity: Counter tick: 4\n08-23 11:04:26.609  D MainActivity: Counter tick: 5\n08-23 11:04:27.104  D MainActivity: Counter tick: 6\n08-23 11:04:27.612  D MainActivity: Counter tick: 7\n08-23 11:04:27.900  D SnapTrace: Thermal status polled: MODERATE (level 2)\n08-23 11:04:28.101  D MainActivity: Counter tick: 8\n08-23 11:04:28.603  D MainActivity: Counter tick: 9\n08-23 11:04:29.100  D MainActivity: Counter tick: 10\n08-23 11:04:29.211  I SnapTrace: MemoryInfo polled â€” used: 8823 MB / total: 12288 MB\n08-23 11:04:29.601  D MainActivity: Counter tick: 11\n08-23 11:04:29.887  I ViewGroup: onInterceptTouchEvent â€” ACTION_DOWN at (540, 1680)\n08-23 11:04:29.889  D MainActivity: CRASH BUTTON CLICKED â€” triggering NPE\n08-23 11:04:29.890  E MainActivity: Entering updateCounterDisplay() â€” counterTextView is null\n08-23 11:04:30.004  E AndroidRuntime: FATAL EXCEPTION: main\n08-23 11:04:30.004  E AndroidRuntime: java.lang.NullPointerException: Attempt to invoke virtual method 'void android.widget.TextView.setText' on a null object reference\n08-23 11:04:30.112  I SnapTrace: UncaughtExceptionHandler fired. Initiating capture sequence.\n08-23 11:04:30.115  I SnapTrace: Capture started â€” flushing frame buffer (14 frames).\n08-23 11:04:31.104  I SnapTrace: Stack trace written (2.1 KB).\n08-23 11:04:31.210  I SnapTrace: Logcat lines collected (50 lines, 4.8 KB).\n08-23 11:04:32.201  I SnapTrace: Capture complete. Duration: 2086 ms.\n08-23 11:04:32.410  I SnapTrace: Package zip assembled. Size: 278 KB.\n08-23 11:04:32.481  I SnapTrace: Upload complete. Duration: 70 ms. HTTP 200 OK.\n--------- end of main`;
+
+// â”€â”€â”€ App state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let G = {
+  manifest: null, ai: null, stackTrace: null, logs: null,
+  frames: [], currentFrame: 0, playing: false, playTimer: null,
+  chartsDrawn: false, serverBase: ''
+};
+
+// â”€â”€â”€ Routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const PAGE_TITLES = { overview:'Overview', replay:'Crash Replay', analytics:'Performance Analytics', diagnosis:'AI Diagnosis', details:'Event Details' };
+
+function navigate(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === id);
+  });
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[id] || id;
+  if (id === 'analytics' && !G.chartsDrawn && G.manifest) { drawAllCharts(); G.chartsDrawn = true; }
+  if (id === 'replay') renderReplay();
+  // close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+  window.scrollTo(0, 0);
+}
+
+document.querySelectorAll('[data-page]').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.page));
+});
+
+// â”€â”€â”€ Hamburger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+document.getElementById('hamburger-btn').addEventListener('click', () => {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('visible', sb.classList.contains('open'));
+});
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+});
+
+// â”€â”€â”€ Welcome popup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function initWelcome() {
+  if (!sessionStorage.getItem('st_welcomed')) {
+    const overlay = document.getElementById('welcome-overlay');
+    overlay.classList.add('visible');
+    document.getElementById('welcome-cta').addEventListener('click', dismissWelcome);
+    overlay.addEventListener('click', e => { if (e.target === overlay) dismissWelcome(); });
+  }
+}
+function dismissWelcome() {
+  sessionStorage.setItem('st_welcomed', '1');
+  const overlay = document.getElementById('welcome-overlay');
+  overlay.classList.remove('visible');
+  navigate('overview');
+}
+</script>
+
+<script>
+// â”€â”€â”€ Transfer timer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let timerStart = null, timerRAF = null;
+function startTransferTimer() {
+  timerStart = performance.now();
+  const banner = document.getElementById('transfer-banner');
+  banner.classList.add('visible');
+  setPipeStep('pipe-capture', 'active');
+  function tick() {
+    const elapsed = (performance.now() - timerStart) / 1000;
+    document.getElementById('banner-timer').textContent = elapsed.toFixed(2) + 's';
+    timerRAF = requestAnimationFrame(tick);
+  }
+  timerRAF = requestAnimationFrame(tick);
+}
+function advancePipe(step) {
+  const steps = ['pipe-capture','pipe-package','pipe-upload','pipe-render'];
+  const idx = steps.indexOf(step);
+  steps.forEach((s, i) => {
+    const el = document.getElementById(s);
+    if (!el) return;
+    if (i < idx)  setPipeStep(s, 'done');
+    else if (i === idx) setPipeStep(s, 'active');
+  });
+}
+function setPipeStep(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('done','active');
+  if (state) el.classList.add(state);
+}
+function stopTransferTimer(totalMs) {
+  if (timerRAF) cancelAnimationFrame(timerRAF);
+  ['pipe-capture','pipe-package','pipe-upload','pipe-render'].forEach(s => setPipeStep(s, 'done'));
+  document.getElementById('banner-timer').style.display = 'none';
+  const doneEl = document.getElementById('banner-done');
+  doneEl.style.display = 'block';
+  doneEl.textContent = `âœ“ Upload Complete â€” ${totalMs ? (totalMs/1000).toFixed(3)+'s' : 'done'}`;
+  setTimeout(() => {
+    const banner = document.getElementById('transfer-banner');
+    banner.style.opacity = '0';
+    setTimeout(() => banner.classList.remove('visible'), 400);
+  }, 4000);
+}
+
+// â”€â”€â”€ Data loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function loadData() {
+  startTransferTimer();
+  advancePipe('pipe-capture');
+  let manifest = null, ai = null, source = 'mock';
+
+  // Try server first
+  const bases = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  for (const base of bases) {
+    try {
+      const r = await Promise.race([
+        fetch(base + '/api/latest'),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 1500))
+      ]);
+      if (r.ok) {
+        const d = await r.json();
+        manifest = d.manifest; ai = d.ai; source = d.source || 'real';
+        G.serverBase = base;
+        break;
+      }
+    } catch (_) {}
+  }
+
+  // Fallback to embedded mock
+  if (!manifest) { manifest = MOCK; ai = MOCK_AI; source = 'mock'; }
+
+  advancePipe('pipe-package');
+  G.manifest = manifest;
+  G.ai = ai;
+
+  // Load text files
+  advancePipe('pipe-upload');
+  G.stackTrace = MOCK_STACK; G.logs = MOCK_LOGS;
+  if (G.serverBase) {
+    try {
+      const [sr, lr] = await Promise.all([
+        fetch(G.serverBase + '/api/stacktrace').then(r => r.text()),
+        fetch(G.serverBase + '/api/logs').then(r => r.text())
+      ]);
+      G.stackTrace = sr; G.logs = lr;
+    } catch (_) {}
+  }
+
+  // Load frame list
+  if (G.serverBase) {
+    try {
+      const fr = await fetch(G.serverBase + '/api/frames');
+      const fd = await fr.json();
+      G.frames = fd.frames || [];
+    } catch (_) {}
+  }
+
+  advancePipe('pipe-render');
+  populateAll();
+  stopTransferTimer(manifest.transfer_total_ms);
+}
+
+// â”€â”€â”€ Populate all pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function populateAll() {
+  const m = G.manifest;
+  populateOverview(m);
+  populateReplayMeta(m);
+  populateAnalyticsMeta(m);
+  populateDiagnosis(m, G.ai);
+  populateDetails(m);
+  populateLogs();
+}
+
+function fmt(ts) {
+  if (!ts) return 'â€”';
+  try { return new Date(ts).toLocaleTimeString('en-US', { hour12: false, hour:'2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 }); }
+  catch (_) { return ts; }
+}
+function fmtMs(ms) { return ms != null ? ms + ' ms' : 'â€”'; }
+function fmtBytes(b) { if (!b) return 'â€”'; if (b > 1048576) return (b/1048576).toFixed(1) + ' MB'; return (b/1024).toFixed(0) + ' KB'; }
+function fmtDate(ts) {
+  if (!ts) return 'â€”';
+  try { return new Date(ts).toLocaleString('en-US', { dateStyle:'medium', timeStyle:'medium' }); }
+  catch (_) { return ts; }
+}
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v ?? 'â€”'; }
+
+// â”€â”€â”€ Overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function populateOverview(m) {
+  setText('ov-exception', m.exception_type || 'â€”');
+  setText('ov-location', `${m.exception_class || 'â€”'}.${m.exception_method || 'â€”'} Â· line ${m.exception_line || 'â€”'}`);
+  const tb = document.getElementById('ov-time-badge'); if (tb) tb.textContent = fmt(m.crash_timestamp);
+  const db = document.getElementById('ov-device-badge'); if (db) db.textContent = m.device_model || 'â€”';
+  const ab = document.getElementById('ov-android-badge'); if (ab) ab.textContent = `Android ${m.android_version || 'â€”'}`;
+
+  // metrics
+  if (m.memory) {
+    const pct = m.memory.total_ram_mb ? Math.round(m.memory.used_ram_mb / m.memory.total_ram_mb * 100) : 'â€”';
+    setText('ov-mem-used', m.memory.used_ram_mb?.toLocaleString() || 'â€”');
+    setText('ov-mem-pct', pct + '%');
+    setText('ov-mem-total', (m.memory.total_ram_mb || 'â€”') + ' MB');
+  }
+  if (m.thermal) {
+    setText('ov-cpu-temp', m.thermal.cpu_temp_c ?? 'â€”');
+    setText('ov-thermal-label', m.thermal.status_label || 'â€”');
+  }
+  if (m.performance) {
+    setText('ov-fps', m.performance.avg_fps ?? 'â€”');
+    setText('ov-responsiveness', m.performance.responsiveness || 'â€”');
+    setText('ov-dropped', `${m.performance.dropped_frames ?? 'â€”'} dropped`);
+  }
+  setText('ov-upload', m.upload_duration_ms ?? 'â€”');
+  setText('ov-transfer', `${m.transfer_total_ms ?? 'â€”'} ms total`);
+
+  // capture status
+  const captureBadge = document.getElementById('ov-capture-method');
+  if (captureBadge) captureBadge.textContent = `${(m.capture_method || 'â€”').replace('_',' ')} Â· ${m.frame_count ?? 'â€”'} frames`;
+  setText('ov-pkg-size', fmtBytes(m.package_size_bytes));
+  setText('ov-cap-dur', fmtMs(m.capture_duration_ms));
+  setText('ov-upl-dur', fmtMs(m.upload_duration_ms));
+  setText('ov-tot-dur', fmtMs(m.transfer_total_ms));
+
+  // pipeline timestamps
+  setText('pn-t0', fmt(m.crash_timestamp));
+  setText('pn-t1', fmt(m.crash_timestamp));
+  setText('pn-t2', fmt(m.capture_end_timestamp));
+  setText('pn-t3', fmt(m.package_timestamp));
+  setText('pn-t4', fmt(m.upload_end_timestamp));
+  setText('pn-t5', fmt(m.render_complete_timestamp));
+  setText('pn-s2', `âœ“ ${m.frame_count ?? 'â€”'} frames`);
+  setText('pn-s3', `âœ“ ${fmtBytes(m.package_size_bytes)}`);
+  setText('pn-s4', `âœ“ ${fmtMs(m.upload_duration_ms)}`);
+
+  // sidebar device
+  setText('sidebar-device', m.device_model || 'â€”');
+  const sub = document.getElementById('sidebar-device-sub');
+  if (sub) sub.textContent = `Android ${m.android_version || 'â€”'} Â· SDK ${m.sdk_version || 'â€”'}`;
+
+  // AI preview
+  if (G.ai?.root_cause) {
+    setText('ov-ai-preview', G.ai.root_cause);
+  }
+}
+</script>
+
+<script>
+// â”€â”€â”€ Replay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function populateReplayMeta(m) {
+  setText('rp-exception', m.exception_type || 'â€”');
+  setText('rp-class', (m.exception_class || 'â€”').split('.').pop());
+  setText('rp-method', `${m.exception_method || 'â€”'} Â· :${m.exception_line || 'â€”'}`);
+  setText('rp-time', fmtDate(m.crash_timestamp));
+  setText('rp-frame-total', m.frame_count ?? 14);
+  setText('rp-crash-frame-num', m.crash_frame_index ?? 11);
+  if (m.performance) {
+    setText('rp-fps-val', `${m.performance.avg_fps ?? 'â€”'} FPS`);
+    const rb = document.getElementById('rp-resp-badge');
+    if (rb) rb.textContent = m.performance.responsiveness || 'Stable';
+  }
+  buildFilmstrip(m);
+}
+
+function buildFilmstrip(m) {
+  const strip = document.getElementById('filmstrip');
+  if (!strip) return;
+  strip.innerHTML = '';
+  const count = m.frame_count || 14;
+  const crashIdx = m.crash_frame_index ?? 11;
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement('div');
+    div.className = 'filmstrip-thumb' + (i === crashIdx ? ' crash-frame' : '') + (i === 0 ? ' active' : '');
+    div.dataset.frame = i;
+    const frameFile = m.frame_files?.[i];
+    if (frameFile && G.serverBase) {
+      const img = document.createElement('img');
+      img.src = G.serverBase + '/frames/' + frameFile;
+      img.alt = `Frame ${i}`;
+      img.onerror = () => { div.textContent = `F${i}`; };
+      div.appendChild(img);
+    } else {
+      div.textContent = `F${i}`;
+      if (i === crashIdx) div.style.color = 'var(--red)';
+    }
+    div.addEventListener('click', () => jumpToFrame(i));
+    strip.appendChild(div);
+  }
+}
+
+function renderReplay() {
+  if (!G.manifest) return;
+  const m = G.manifest;
+  buildFilmstrip(m);
+  jumpToFrame(0);
+  // Stack trace
+  const stContent = document.getElementById('st-content');
+  if (stContent) stContent.textContent = G.stackTrace || 'â€”';
+  // Scrubber markers
+  addScrubberMarkers(m);
+}
+
+function jumpToFrame(idx) {
+  const m = G.manifest;
+  if (!m) return;
+  const count = m.frame_count || 14;
+  G.currentFrame = Math.max(0, Math.min(idx, count - 1));
+
+  const viewport = document.getElementById('replay-viewport');
+  const img = document.getElementById('replay-frame-img');
+  const ph  = document.getElementById('replay-placeholder');
+  const counter = document.getElementById('replay-counter');
+  const crashBadge = document.getElementById('replay-crash-badge-overlay');
+  const isCrash = G.currentFrame === (m.crash_frame_index ?? 11);
+
+  // Try to load real frame
+  const frameFile = m.frame_files?.[G.currentFrame];
+  if (frameFile && G.serverBase) {
+    img.src = G.serverBase + '/frames/' + frameFile;
+    img.style.display = 'block';
+    ph.style.display = 'none';
+    img.onerror = () => { img.style.display='none'; ph.style.display='flex'; };
+  } else {
+    img.style.display = 'none';
+    ph.style.display = 'flex';
+    // color the placeholder to hint crash frame
+    ph.style.background = isCrash ? 'rgba(239,68,68,0.08)' : 'var(--surface-2)';
+  }
+
+  // Counter and crash badge
+  if (counter) counter.textContent = `Frame ${G.currentFrame + 1} / ${count}`;
+  if (crashBadge) crashBadge.style.display = isCrash ? 'block' : 'none';
+
+  // Scrubber position
+  const pct = count > 1 ? (G.currentFrame / (count - 1)) * 100 : 0;
+  const fill = document.getElementById('scrubber-fill');
+  const thumb = document.getElementById('scrubber-thumb');
+  if (fill)  fill.style.width  = pct + '%';
+  if (thumb) thumb.style.left  = pct + '%';
+
+  // Timestamp label (~2fps)
+  const ts = document.getElementById('rp-ts-label');
+  if (ts) ts.textContent = `t+${(G.currentFrame * 0.5).toFixed(1)}s`;
+
+  // Filmstrip active highlight
+  document.querySelectorAll('.filmstrip-thumb').forEach((t, i) => {
+    t.classList.toggle('active', i === G.currentFrame);
+  });
+}
+
+function addScrubberMarkers(m) {
+  const track = document.getElementById('scrubber-track');
+  if (!track) return;
+  // remove old markers
+  track.querySelectorAll('.scrubber-marker').forEach(el => el.remove());
+  const count = m.frame_count || 14;
+  const crashPct = count > 1 ? ((m.crash_frame_index ?? 11) / (count - 1)) * 100 : 75;
+
+  const mkr = document.createElement('div');
+  mkr.className = 'scrubber-marker crash-marker';
+  mkr.style.left = crashPct + '%';
+  mkr.title = 'Crash frame';
+  track.appendChild(mkr);
+}
+
+// Scrubber click
+document.getElementById('scrubber-track')?.addEventListener('click', function(e) {
+  const rect = this.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const count = (G.manifest?.frame_count || 14);
+  jumpToFrame(Math.round(pct * (count - 1)));
+});
+
+// Playback controls
+document.getElementById('rp-prev')?.addEventListener('click', () => {
+  stopPlay(); jumpToFrame(G.currentFrame - 1);
+});
+document.getElementById('rp-next')?.addEventListener('click', () => {
+  stopPlay(); jumpToFrame(G.currentFrame + 1);
+});
+document.getElementById('rp-play')?.addEventListener('click', () => {
+  G.playing ? stopPlay() : startPlay();
+});
+
+function startPlay() {
+  G.playing = true;
+  const icon = document.getElementById('rp-play-icon');
+  if (icon) icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  document.getElementById('rp-play')?.classList.add('active-btn');
+  const count = G.manifest?.frame_count || 14;
+  if (G.currentFrame >= count - 1) jumpToFrame(0);
+  G.playTimer = setInterval(() => {
+    if (G.currentFrame >= count - 1) { stopPlay(); return; }
+    jumpToFrame(G.currentFrame + 1);
+  }, 500); // ~2fps
+}
+function stopPlay() {
+  G.playing = false;
+  clearInterval(G.playTimer);
+  const icon = document.getElementById('rp-play-icon');
+  if (icon) icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  document.getElementById('rp-play')?.classList.remove('active-btn');
+}
+
+// Stack trace toggle
+document.getElementById('st-toggle')?.addEventListener('click', () => {
+  const body = document.getElementById('st-body');
+  if (body) body.classList.toggle('expanded');
+});
+</script>
+
+<script>
+// â”€â”€â”€ CHARTS (lightweight canvas â€” no external dependencies) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function populateAnalyticsMeta(m) {
+  if (!m) return;
+  const pm = m.memory, pt = m.thermal, pp = m.performance;
+  setText('pa-peak-mem', pm ? Math.max(...pm.series.map(s=>s.used)).toLocaleString() : 'Unavailable from this capture');
+  setText('pa-cpu-temp', pt?.cpu_temp_c ?? 'Unavailable from this capture');
+  setText('pa-fps', pp?.avg_fps ?? 'Unavailable from this capture');
+  setText('pa-frames', m.frame_count ?? 'Unavailable from this capture');
+}
+
+function drawAllCharts() {
+  const m = G.manifest;
+  if (!m) return;
+  drawLineChart('chart-memory', m.memory?.series?.map(p => ({ x: p.t/1000, y: p.used })), {
+    color: '#F5C518', fill: 'rgba(245,197,24,0.12)',
+    xLabel: 'Time (s)', yLabel: 'MB', crashX: null
+  });
+  drawThermalChart('chart-thermal', m.thermal?.series);
+  drawFpsChart('chart-fps', m.performance?.series, m.crash_timestamp, m.capture_start_timestamp);
+  drawPipelineBars(m);
+}
+
+// â”€â”€ Generic line/area chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function drawLineChart(canvasId, points, opts) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !points || points.length < 2) {
+    showUnavailable(canvasId); return;
+  }
+  const parent = canvas.parentElement;
+  canvas.width  = parent.offsetWidth  || 600;
+  canvas.height = parent.offsetHeight || 180;
+  const ctx = canvas.getContext('2d');
+  const { width: W, height: H } = canvas;
+  const pad = { top:16, right:20, bottom:32, left:58 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top  - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const xs = points.map(p => p.x), ys = points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys) * 0.98, maxY = Math.max(...ys) * 1.02;
+
+  function toX(x) { return pad.left + ((x - minX) / (maxX - minX || 1)) * chartW; }
+  function toY(y) { return pad.top  + (1 - (y - minY) / (maxY - minY || 1)) * chartH; }
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (i / 4) * chartH;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke();
+    const val = maxY - (i / 4) * (maxY - minY);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(val).toLocaleString(), pad.left - 5, y + 3.5);
+  }
+  // X labels
+  ctx.textAlign = 'center'; ctx.font = '10px system-ui';
+  const xTicks = 5;
+  for (let i = 0; i <= xTicks; i++) {
+    const xv = minX + (i / xTicks) * (maxX - minX);
+    ctx.fillText(xv.toFixed(1) + 's', toX(xv), H - 8);
+  }
+
+  // Fill area
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  grad.addColorStop(0, opts.fill || 'rgba(245,197,24,0.15)');
+  grad.addColorStop(1, 'transparent');
+  ctx.beginPath();
+  ctx.moveTo(toX(points[0].x), toY(points[0].y));
+  points.forEach(p => ctx.lineTo(toX(p.x), toY(p.y)));
+  ctx.lineTo(toX(points[points.length-1].x), pad.top + chartH);
+  ctx.lineTo(toX(points[0].x), pad.top + chartH);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(toX(points[0].x), toY(points[0].y));
+  points.forEach(p => ctx.lineTo(toX(p.x), toY(p.y)));
+  ctx.strokeStyle = opts.color || '#F5C518';
+  ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Dots
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(toX(p.x), toY(p.y), 3, 0, Math.PI*2);
+    ctx.fillStyle = opts.color || '#F5C518'; ctx.fill();
+  });
+
+  // Hover tooltips
+  attachChartHover(canvas, points, toX, toY, opts.color || '#F5C518', (p) => [
+    { color: opts.color || '#F5C518', label: opts.yLabel || 'Value', value: Math.round(p.y).toLocaleString() }
+  ], (p) => `t = ${p.x.toFixed(1)}s`);
+}
+
+// â”€â”€ Thermal multi-line chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function drawThermalChart(canvasId, series) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !series || series.length < 2) { showUnavailable(canvasId); return; }
+  const parent = canvas.parentElement;
+  canvas.width  = parent.offsetWidth  || 600;
+  canvas.height = parent.offsetHeight || 160;
+  const ctx = canvas.getContext('2d');
+  const { width: W, height: H } = canvas;
+  const pad = { top:16, right:20, bottom:32, left:46 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  const allTemps = series.flatMap(p => [p.cpu, p.gpu, p.battery]);
+  const minY = Math.min(...allTemps) * 0.97;
+  const maxY = Math.max(...allTemps) * 1.02;
+  const minX = series[0].t/1000, maxX = series[series.length-1].t/1000;
+
+  function toX(t) { return pad.left + ((t - minX) / (maxX - minX || 1)) * chartW; }
+  function toY(v) { return pad.top  + (1 - (v - minY) / (maxY - minY || 1)) * chartH; }
+
+  ctx.clearRect(0, 0, W, H);
+  // Grid
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (i/4)*chartH;
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+chartW, y); ctx.stroke();
+    const val = maxY - (i/4)*(maxY-minY);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(val.toFixed(0)+'Â°', pad.left-4, y+3.5);
+  }
+  ctx.textAlign = 'center'; ctx.font = '10px system-ui';
+  series.forEach((p, i) => { if (i % 2 === 0) ctx.fillText((p.t/1000).toFixed(0)+'s', toX(p.t/1000), H-8); });
+
+  const lines = [
+    { key:'cpu',     color:'#EF4444' },
+    { key:'gpu',     color:'#F97316' },
+    { key:'battery', color:'#22D3EE' }
+  ];
+  lines.forEach(({ key, color }) => {
+    ctx.beginPath();
+    series.forEach((p, i) => {
+      const x = toX(p.t/1000), y = toY(p[key]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    series.forEach(p => {
+      ctx.beginPath(); ctx.arc(toX(p.t/1000), toY(p[key]), 2.5, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+    });
+  });
+}
+
+// â”€â”€ FPS chart with crash marker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function drawFpsChart(canvasId, series, crashTs, captureTs) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !series || series.length < 2) { showUnavailable(canvasId); return; }
+  const parent = canvas.parentElement;
+  canvas.width  = parent.offsetWidth  || 600;
+  canvas.height = parent.offsetHeight || 160;
+  const ctx = canvas.getContext('2d');
+  const { width: W, height: H } = canvas;
+  const pad = { top:16, right:20, bottom:32, left:40 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+
+  const xs = series.map(p => p.t/1000);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = 0, maxY = 65;
+
+  function toX(x) { return pad.left + ((x - minX) / (maxX - minX || 1)) * chartW; }
+  function toY(y) { return pad.top  + (1 - (y - minY) / (maxY - minY || 1)) * chartH; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Target FPS line
+  ctx.strokeStyle = 'rgba(34,197,94,0.2)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(pad.left, toY(60)); ctx.lineTo(pad.left+chartW, toY(60)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(34,197,94,0.5)'; ctx.font = '9px system-ui'; ctx.textAlign = 'left';
+  ctx.fillText('60fps', pad.left+4, toY(60)-4);
+
+  // Grid
+  [0,15,30,45,60].forEach(v => {
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, toY(v)); ctx.lineTo(pad.left+chartW, toY(v)); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.textAlign = 'right';
+    ctx.fillText(v, pad.left-4, toY(v)+3.5);
+  });
+  ctx.textAlign = 'center'; ctx.font = '10px system-ui';
+  xs.forEach((x, i) => { if (i % 3 === 0) ctx.fillText(x.toFixed(0)+'s', toX(x), H-8); });
+
+  // Fill
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top+chartH);
+  grad.addColorStop(0, 'rgba(34,211,238,0.18)');
+  grad.addColorStop(1, 'transparent');
+  ctx.beginPath();
+  ctx.moveTo(toX(xs[0]), toY(series[0].fps));
+  series.forEach(p => ctx.lineTo(toX(p.t/1000), toY(p.fps)));
+  ctx.lineTo(toX(xs[xs.length-1]), pad.top+chartH);
+  ctx.lineTo(toX(xs[0]), pad.top+chartH);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  series.forEach((p, i) => {
+    const x = toX(p.t/1000), y = toY(p.fps);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = '#22D3EE'; ctx.lineWidth = 2.5; ctx.lineJoin='round'; ctx.stroke();
+
+  // Crash marker (approx t=4.0 where FPS dropped to 42)
+  const crashX = toX(4.0);
+  ctx.strokeStyle = 'rgba(239,68,68,0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(crashX, pad.top); ctx.lineTo(crashX, pad.top+chartH); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(239,68,68,0.9)'; ctx.font = '9px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('CRASH', crashX, pad.top+10);
+
+  // Dots
+  series.forEach(p => {
+    ctx.beginPath(); ctx.arc(toX(p.t/1000), toY(p.fps), 2.5, 0, Math.PI*2);
+    ctx.fillStyle = '#22D3EE'; ctx.fill();
+  });
+
+  attachChartHover(canvas, series.map(p=>({x:p.t/1000,y:p.fps})), toX, toY, '#22D3EE',
+    (p) => [{ color:'#22D3EE', label:'FPS', value: p.y.toFixed(0) }],
+    (p) => `t = ${p.x.toFixed(1)}s`);
+}
+
+// â”€â”€ Pipeline bar chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function drawPipelineBars(m) {
+  const container = document.getElementById('pipeline-bars');
+  if (!container || !m) return;
+  const total = m.transfer_total_ms || 349;
+  const bars = [
+    { label: 'Capture',  ms: m.capture_duration_ms || 0,  color: '#F5C518' },
+    { label: 'Package',  ms: m.package_duration_ms || 0,  color: '#22D3EE' },
+    { label: 'Upload',   ms: m.upload_duration_ms  || 0,  color: '#22C55E' },
+    { label: 'Render',   ms: (m.transfer_total_ms || 0) - (m.capture_duration_ms||0) - (m.package_duration_ms||0) - (m.upload_duration_ms||0), color: '#F97316' }
+  ];
+  container.innerHTML = '';
+  bars.forEach(b => {
+    const pct = Math.max(4, Math.min(100, b.ms / total * 100));
+    const row = document.createElement('div');
+    row.className = 'pipeline-bar-row';
+    row.innerHTML = `
+      <div class="pipeline-bar-label">${b.label}</div>
+      <div class="pipeline-bar-track">
+        <div class="pipeline-bar-fill" style="width:0%; background:${b.color}" data-pct="${pct}">${b.ms}ms</div>
+      </div>
+      <div class="pipeline-bar-val">${b.ms}ms</div>`;
+    container.appendChild(row);
+  });
+  // Animate bars in
+  setTimeout(() => {
+    container.querySelectorAll('.pipeline-bar-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 100);
+}
+
+function showUnavailable(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const parent = canvas.parentElement;
+  canvas.style.display = 'none';
+  const msg = document.createElement('div');
+  msg.className = 'chart-unavailable';
+  msg.textContent = 'Unavailable from this capture';
+  parent.appendChild(msg);
+}
+
+// â”€â”€ Tooltip hover for charts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function attachChartHover(canvas, points, toX, toY, color, rowsFn, labelFn) {
+  const tooltip = document.getElementById('chart-tooltip');
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    // find nearest point
+    let nearest = points[0], nearDist = Infinity;
+    points.forEach(p => {
+      const d = Math.abs(toX(p.x) - mx);
+      if (d < nearDist) { nearDist = d; nearest = p; }
+    });
+    if (nearDist > 40) { tooltip.classList.remove('visible'); return; }
+    document.getElementById('tt-label').textContent = labelFn(nearest);
+    const rows = rowsFn(nearest);
+    document.getElementById('tt-rows').innerHTML = rows.map(r =>
+      `<div class="tooltip-row"><div class="tooltip-dot" style="background:${r.color}"></div>${r.label}: <strong>${r.value}</strong></div>`
+    ).join('');
+    tooltip.style.left = (e.clientX) + 'px';
+    tooltip.style.top  = (e.clientY) + 'px';
+    tooltip.classList.add('visible');
+  });
+  canvas.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+}
+</script>
+
+<script>
+// â”€â”€â”€ AI Diagnosis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function populateDiagnosis(m, ai) {
+  if (!m) return;
+
+  // Source badge
+  const badge = document.getElementById('diag-source-badge');
+  if (badge && ai) {
+    const isLive = ai.analysis_source === 'live';
+    badge.className = 'ai-source-badge ' + (isLive ? 'ai-source-live' : 'ai-source-cached');
+    badge.textContent = isLive ? 'âš¡ Live AI Analysis' : 'âš¡ Cached Analysis';
+  }
+
+  // Root cause
+  const rc = document.getElementById('diag-root-cause');
+  if (rc) rc.textContent = ai?.root_cause || 'AI analysis unavailable â€” check server connection.';
+
+  // Evidence list
+  const ev = document.getElementById('diag-evidence');
+  if (ev && ai?.evidence?.length) {
+    ev.innerHTML = ai.evidence.map(e =>
+      `<li class="evidence-item">${escHtml(e)}</li>`
+    ).join('');
+  } else if (ev) {
+    ev.innerHTML = `
+      <li class="evidence-item">${escHtml(m.exception_type || 'â€”')} thrown at ${escHtml(m.exception_class || 'â€”')}.${escHtml(m.exception_method || 'â€”')}:${m.exception_line || 'â€”'}</li>
+      <li class="evidence-item">Memory at crash: ${m.memory?.used_ram_mb?.toLocaleString() || 'â€”'} MB / ${m.memory?.total_ram_mb?.toLocaleString() || 'â€”'} MB</li>
+      <li class="evidence-item">Thermal status: ${m.thermal?.status_label || 'â€”'} (CPU ${m.thermal?.cpu_temp_c || 'â€”'}Â°C)</li>
+      <li class="evidence-item">Crash trigger: ${m.trigger_type || 'â€”'} Â· Captured ${m.frame_count || 'â€”'} frames</li>`;
+  }
+
+  // Suggested fix
+  const fix = document.getElementById('diag-fix');
+  if (fix) fix.textContent = ai?.suggested_fix || 'Run the server with a valid ANTHROPIC_API_KEY to get a live suggested fix.';
+
+  // Crash location badges
+  const eb = document.getElementById('diag-exception-badge'); if (eb) eb.textContent = m.exception_type || 'â€”';
+  const cb = document.getElementById('diag-class-badge');
+  if (cb) cb.textContent = (m.exception_class || 'â€”').split('.').pop();
+  const mb = document.getElementById('diag-method-badge');
+  if (mb) mb.textContent = `${m.exception_method || 'â€”'} Â· :${m.exception_line || 'â€”'}`;
+  setText('diag-message', m.exception_message || 'â€”');
+}
+
+// â”€â”€â”€ Event Details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function populateDetails(m) {
+  if (!m) return;
+  setText('mt-id',      m.capture_id || 'â€”');
+  setText('mt-ts',      fmtDate(m.crash_timestamp));
+  setText('mt-exc',     m.exception_type || 'â€”');
+  setText('mt-class',   m.exception_class || 'â€”');
+  setText('mt-method',  `${m.exception_method || 'â€”'} Â· line ${m.exception_line || 'â€”'}`);
+  setText('mt-device',  `${m.device_model || 'â€”'} (${m.device_brand || 'â€”'})`);
+  setText('mt-android', `Android ${m.android_version || 'â€”'} (SDK ${m.sdk_version || 'â€”'})`);
+  setText('mt-pkg',     m.app_package || 'â€”');
+  setText('mt-ver',     `${m.app_version || 'â€”'} (build ${m.app_version_code || 'â€”'})`);
+  setText('mt-trigger', m.trigger_type || 'â€”');
+  setText('mt-capture', (m.capture_method || 'â€”').replace('_', ' '));
+  setText('mt-frames',  `${m.frame_count || 'â€”'} frames Â· crash frame #${m.crash_frame_index ?? 'â€”'}`);
+
+  // Package info table
+  setText('pt-size', fmtBytes(m.package_size_bytes));
+  setText('pt-cap',  fmtMs(m.capture_duration_ms));
+  setText('pt-pkg',  fmtMs(m.package_duration_ms));
+  setText('pt-upl',  fmtMs(m.upload_duration_ms));
+  setText('pt-tot',  fmtMs(m.transfer_total_ms));
+  setText('pt-ip',   m.server_ip ? `${m.server_ip}:${m.server_port || 3000}` : 'â€”');
+  setText('pt-net',  m.network_ssid || 'â€”');
+
+  // Frame count badge
+  const fcb = document.getElementById('col-frame-count');
+  if (fcb) fcb.textContent = `${m.frame_count || 'â€”'} frames`;
+
+  // Thumbnails
+  buildDetailsThumbs(m);
+}
+
+function buildDetailsThumbs(m) {
+  const grid = document.getElementById('details-thumbs');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const count = m.frame_count || 14;
+  const crashIdx = m.crash_frame_index ?? 11;
+  for (let i = 0; i < count; i++) {
+    const div = document.createElement('div');
+    div.className = 'thumb-item' + (i === crashIdx ? ' crash-thumb' : '');
+    div.title = i === crashIdx ? `Frame ${i} â€” CRASH FRAME` : `Frame ${i}`;
+    const frameFile = m.frame_files?.[i];
+    if (frameFile && G.serverBase) {
+      const img = document.createElement('img');
+      img.src = G.serverBase + '/frames/' + frameFile;
+      img.alt = `Frame ${i}`;
+      img.onerror = () => { div.innerHTML = `<span>F${i}</span>`; };
+      img.addEventListener('click', () => openLightbox(img.src));
+      div.appendChild(img);
+    } else {
+      div.innerHTML = `<span style="color:${i===crashIdx?'var(--red)':'var(--text-3)'}">F${i}</span>`;
+    }
+    const lbl = document.createElement('div');
+    lbl.className = 'thumb-label';
+    lbl.textContent = i === crashIdx ? 'âš¡ CRASH' : `#${i}`;
+    if (i === crashIdx) lbl.style.color = 'var(--red)';
+    div.appendChild(lbl);
+    grid.appendChild(div);
+  }
+}
+
+// â”€â”€â”€ Logs renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function populateLogs() {
+  // Stack trace in details
+  const ds = document.getElementById('details-stack');
+  if (ds && G.stackTrace) ds.innerHTML = colorizeStack(G.stackTrace);
+
+  // Logs in details
+  const dl = document.getElementById('details-logs');
+  if (dl && G.logs) dl.innerHTML = colorizeLogs(G.logs);
+}
+
+function colorizeStack(text) {
+  return text.split('\n').map(line => {
+    let cls = 'log-info';
+    if (line.startsWith('java.lang.') || line.includes('Exception') || line.includes('Error:')) cls = 'log-fatal';
+    else if (line.startsWith('\tat ') || line.startsWith('  at ')) cls = 'log-debug';
+    else if (line.startsWith('Caused by:')) cls = 'log-warn';
+    else if (line.includes('SnapTrace')) cls = 'log-snap';
+    return `<div class="log-line ${cls}">${escHtml(line)}</div>`;
+  }).join('');
+}
+
+function colorizeLogs(text) {
+  return text.split('\n').map(line => {
+    let cls = 'log-debug';
+    if (/ E /.test(line) || /FATAL/.test(line))    cls = 'log-error';
+    else if (/ W /.test(line))                       cls = 'log-warn';
+    else if (/ I /.test(line))                       cls = 'log-info';
+    else if (/SnapTrace/.test(line))                 cls = 'log-snap';
+    if (/AndroidRuntime/.test(line))                 cls = 'log-fatal';
+    return `<div class="log-line ${cls}">${escHtml(line)}</div>`;
+  }).join('');
+}
+
+// â”€â”€â”€ Collapsible sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function toggleCollapsible(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+  const body = el.querySelector('.collapsible-body');
+  if (body) body.style.maxHeight = el.classList.contains('open') ? '800px' : '0';
+}
+
+// â”€â”€â”€ Lightbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function openLightbox(src) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  if (!lb || !img) return;
+  img.src = src;
+  lb.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+document.getElementById('lightbox-close')?.addEventListener('click', closeLightbox);
+document.getElementById('lightbox')?.addEventListener('click', function(e) {
+  if (e.target === this) closeLightbox();
+});
+function closeLightbox() {
+  document.getElementById('lightbox')?.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// â”€â”€â”€ Resize charts on window resize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (G.chartsDrawn) { G.chartsDrawn = false; drawAllCharts(); G.chartsDrawn = true; }
+  }, 200);
+});
+
+// â”€â”€â”€ BOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+document.addEventListener('DOMContentLoaded', () => {
+  initWelcome();
+  loadData();
+  // Pre-init collapsibles that start open
+  document.querySelectorAll('.collapsible-section.open .collapsible-body').forEach(b => {
+    b.style.maxHeight = '800px';
+  });
+});
+</script>
+</body>
+</html>

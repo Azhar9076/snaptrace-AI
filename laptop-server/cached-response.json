@@ -1,0 +1,13 @@
+{
+  "root_cause": "A NullPointerException was thrown in MainActivity.updateCounterDisplay() because the counterTextView reference was null at call time — the view was not properly retained after a layout configuration change, causing the field to be stale when the crash button's onClick handler fired.",
+  "suggested_fix": "Move the TextView reference assignment into onViewCreated() or re-query it in updateCounterDisplay() using findViewById() each time, and add a null-guard (if counterTextView != null) before calling setText() to prevent the crash if the view hierarchy is unexpectedly recycled.",
+  "analysis_source": "cached",
+  "confidence": null,
+  "evidence": [
+    "NPE at MainActivity.kt:87 in updateCounterDisplay()",
+    "View reference null — not reassigned after lifecycle event",
+    "Crash triggered by user interaction (onClick at line 64)",
+    "Memory pressure at time of crash: 8876 MB / 12288 MB used"
+  ],
+  "generated_at": "2026-08-23T11:04:33.100Z"
+}

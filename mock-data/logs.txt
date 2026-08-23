@@ -1,0 +1,45 @@
+--------- beginning of main
+08-23 11:04:23.101  18432  18432 I SnapTrace: SDK initialized. Package: com.snaptrace.demoapp v1.2.0
+08-23 11:04:23.214  18432  18432 D ActivityThread: Handling launch of ActivityRecord{...}
+08-23 11:04:23.301  18432  18432 I MainActivity: onCreate() called
+08-23 11:04:23.388  18432  18432 D ViewRootImpl: setView = DecorView@...
+08-23 11:04:23.412  18432  18432 I Choreographer: Skipped 2 frames — app doing too much on main thread
+08-23 11:04:23.601  18432  18432 I MainActivity: UI setup complete. Counter started.
+08-23 11:04:24.112  18432  18448 D SnapTrace: Frame buffer rolling. Allocated 8 slots at 720p.
+08-23 11:04:24.604  18432  18432 D MainActivity: Counter tick: 1
+08-23 11:04:25.103  18432  18432 D MainActivity: Counter tick: 2
+08-23 11:04:25.611  18432  18432 D MainActivity: Counter tick: 3
+08-23 11:04:26.108  18432  18432 D MainActivity: Counter tick: 4
+08-23 11:04:26.609  18432  18432 D MainActivity: Counter tick: 5
+08-23 11:04:27.104  18432  18432 D MainActivity: Counter tick: 6
+08-23 11:04:27.612  18432  18432 D MainActivity: Counter tick: 7
+08-23 11:04:27.900  18432  18432 D SnapTrace: Thermal status polled: MODERATE (level 2)
+08-23 11:04:28.101  18432  18432 D MainActivity: Counter tick: 8
+08-23 11:04:28.603  18432  18432 D MainActivity: Counter tick: 9
+08-23 11:04:28.904  18432  18432 W InputMethodManager: startInputInner — ignoring due to windowFocusState
+08-23 11:04:29.100  18432  18432 D MainActivity: Counter tick: 10
+08-23 11:04:29.211  18432  18432 I SnapTrace: MemoryInfo polled — used: 8823 MB / total: 12288 MB
+08-23 11:04:29.601  18432  18432 D MainActivity: Counter tick: 11
+08-23 11:04:29.887  18432  18432 I ViewGroup: onInterceptTouchEvent — ACTION_DOWN at (540, 1680)
+08-23 11:04:29.889  18432  18432 D MainActivity: CRASH BUTTON CLICKED — triggering NPE
+08-23 11:04:29.890  18432  18432 E MainActivity: Entering updateCounterDisplay() — counterTextView is null
+08-23 11:04:30.004  18432  18432 E AndroidRuntime: FATAL EXCEPTION: main
+08-23 11:04:30.004  18432  18432 E AndroidRuntime: Process: com.snaptrace.demoapp, PID: 18432
+08-23 11:04:30.004  18432  18432 E AndroidRuntime: java.lang.NullPointerException: Attempt to invoke virtual method 'void android.widget.TextView.setText(java.lang.CharSequence)' on a null object reference
+08-23 11:04:30.004  18432  18432 E AndroidRuntime: 	at com.snaptrace.demoapp.MainActivity.updateCounterDisplay(MainActivity.kt:87)
+08-23 11:04:30.004  18432  18432 E AndroidRuntime: 	at com.snaptrace.demoapp.MainActivity.onCrashButtonClicked(MainActivity.kt:64)
+08-23 11:04:30.004  18432  18432 E AndroidRuntime: 	at com.snaptrace.demoapp.MainActivity$$ExternalSyntheticLambda0.onClick(D8$$SyntheticClass:0)
+08-23 11:04:30.112  18432  18448 I SnapTrace: UncaughtExceptionHandler fired. Initiating capture sequence.
+08-23 11:04:30.115  18432  18448 I SnapTrace: Capture started — flushing frame buffer (14 frames).
+08-23 11:04:30.812  18432  18448 I SnapTrace: Frame buffer flush complete. Writing stack trace.
+08-23 11:04:31.104  18432  18448 I SnapTrace: Stack trace written (2.1 KB).
+08-23 11:04:31.210  18432  18448 I SnapTrace: Logcat lines collected (50 lines, 4.8 KB).
+08-23 11:04:31.310  18432  18448 I SnapTrace: MemoryInfo snapshot appended to manifest.
+08-23 11:04:31.411  18432  18448 I SnapTrace: Thermal snapshot appended to manifest.
+08-23 11:04:31.601  18432  18448 I SnapTrace: Performance series appended to manifest.
+08-23 11:04:32.201  18432  18448 I SnapTrace: Capture complete. Duration: 2086 ms.
+08-23 11:04:32.410  18432  18448 I SnapTrace: Package zip assembled. Size: 278 KB.
+08-23 11:04:32.411  18432  18448 I SnapTrace: Upload started → 192.168.1.101:3000
+08-23 11:04:32.481  18432  18448 I SnapTrace: Upload complete. Duration: 70 ms. HTTP 200 OK.
+08-23 11:04:32.482  18432  18448 I SnapTrace: Transfer total (capture+package+upload): 349 ms.
+--------- end of main

@@ -1,0 +1,28 @@
+FATAL EXCEPTION: main
+Process: com.snaptrace.demoapp, PID: 18432
+java.lang.NullPointerException: Attempt to invoke virtual method 'void android.widget.TextView.setText(java.lang.CharSequence)' on a null object reference
+	at com.snaptrace.demoapp.MainActivity.updateCounterDisplay(MainActivity.kt:87)
+	at com.snaptrace.demoapp.MainActivity.onCrashButtonClicked(MainActivity.kt:64)
+	at com.snaptrace.demoapp.MainActivity$$ExternalSyntheticLambda0.onClick(D8$$SyntheticClass:0)
+	at android.view.View.performClick(View.java:7461)
+	at android.view.View.performClickInternal(View.java:7438)
+	at android.view.View$PerformClick.run(View.java:28710)
+	at android.os.Handler.handleCallback(Handler.java:938)
+	at android.os.Handler.dispatchMessage(Handler.java:99)
+	at android.os.Looper.loopOnce(Looper.java:201)
+	at android.os.Looper.loop(Looper.java:288)
+	at android.app.ActivityThread.main(ActivityThread.java:7872)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
+
+Caused by: android.view.ViewRootImpl$CalledFromWrongThreadException
+	at android.view.ViewRootImpl.checkThread(ViewRootImpl.java:8748)
+	at android.view.ViewRootImpl.requestLayout(ViewRootImpl.java:1474)
+	... 14 more
+
+--- SnapTrace SDK Capture Point ---
+Thread:           main
+Timestamp:        2026-08-23T11:04:30.112Z
+Capture Trigger:  UncaughtExceptionHandler
+SDK Version:      1.0.0
