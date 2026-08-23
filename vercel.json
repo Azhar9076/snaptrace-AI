@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "laptop-server/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "dashboard/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "laptop-server/server.js"
+    },
+    {
+      "src": "/upload",
+      "dest": "laptop-server/server.js"
+    },
+    {
+      "src": "/frames/(.*)",
+      "dest": "laptop-server/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "dashboard/$1"
+    }
+  ]
+}
