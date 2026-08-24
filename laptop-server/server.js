@@ -188,27 +188,90 @@ async function analyzePackage() {
     return;
   }
 
-  const prompt = `You are a senior Android crash analyst. Analyze this crash report and respond with ONLY valid JSON.
+  // ── Build prompt context from all four signals ────────────────────────────
+  const captureContext = {
+    trigger_type:     manifest.trigger_type,
+    crash_timestamp:  manifest.crash_timestamp,
+    frame_count:      manifest.frame_count,
+    capture_method:   manifest.capture_method,
+    capture_duration_ms: manifest.capture_duration_ms,
+    upload_duration_ms:  manifest.upload_duration_ms,
+    device_model:     manifest.device_model,
+    android_version:  manifest.android_version,
+    app_package:      manifest.app_package,
+    app_version:      manifest.app_version,
+  };
 
-MANIFEST:
-${JSON.stringify({ exception_type: manifest.exception_type, exception_message: manifest.exception_message, exception_class: manifest.exception_class, exception_method: manifest.exception_method, exception_line: manifest.exception_line }, null, 2)}
+  const memoryContext = manifest.memory ? {
+    used_ram_mb:      manifest.memory.used_ram_mb,
+    total_ram_mb:     manifest.memory.total_ram_mb,
+    available_ram_mb: manifest.memory.available_ram_mb,
+    heap_allocated_mb:manifest.memory.heap_allocated_mb,
+    heap_max_mb:      manifest.memory.heap_max_mb,
+    low_memory:       manifest.memory.low_memory,
+  } : null;
 
-STACK TRACE:
-${stackTrace}
+  const thermalContext = manifest.thermal ? {
+    status_label:     manifest.thermal.status_label,
+    cpu_temp_c:       manifest.thermal.cpu_temp_c,
+    gpu_temp_c:       manifest.thermal.gpu_temp_c,
+    battery_temp_c:   manifest.thermal.battery_temp_c,
+  } : null;
 
-RECENT LOGS (last 50 lines):
-${logs}
+  const performanceContext = manifest.performance ? {
+    avg_fps:          manifest.performance.avg_fps,
+    min_fps:          manifest.performance.min_fps,
+    dropped_frames:   manifest.performance.dropped_frames,
+    jank_count:       manifest.performance.jank_count,
+    responsiveness:   manifest.performance.responsiveness,
+  } : null;
 
-Respond with this exact JSON structure — no extra keys, no markdown:
+  // Last 50 log lines (trim to stay within token budget)
+  const logLines = logs
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .slice(-50)
+    .join('\n');
+
+  const hasLogs    = logLines.length > 0;
+  const hasMem     = memoryContext !== null;
+  const hasThermal = thermalContext !== null;
+
+  const prompt = `You are a senior Android crash analyst. You have four independent signals from a crash capture. Reason across ALL of them together — not just the stack trace. Note if any signal contradicts or adds nuance to what the stack trace alone would suggest.
+
+== SIGNAL 1: STACK TRACE ==
+${stackTrace || '(not available)'}
+
+== SIGNAL 2: APPLICATION LOGS (last 50 lines) ==
+${hasLogs ? logLines : '(not available — treat as missing signal)'}
+
+== SIGNAL 3: MEMORY & PERFORMANCE METRICS ==
+${hasMem ? JSON.stringify(memoryContext, null, 2) : '(not available)'}
+${performanceContext ? JSON.stringify(performanceContext, null, 2) : ''}
+
+== SIGNAL 4: THERMAL & CAPTURE CONTEXT ==
+${hasThermal ? JSON.stringify(thermalContext, null, 2) : '(not available)'}
+Capture context: ${JSON.stringify(captureContext, null, 2)}
+
+== INSTRUCTIONS ==
+1. Identify the root cause by reasoning across all available signals.
+2. If the logs show activity immediately before the crash (e.g. a button click, a state change), factor that into your root cause — the stack trace shows WHERE it crashed, but the logs often show WHY it was in that state.
+3. If memory pressure, thermal throttling, or dropped frames contributed or are noteworthy, say so explicitly.
+4. In evidence_used, list ONLY the signals you actually referenced in your reasoning. Do not include a signal just because it was present — only include it if it influenced your conclusion.
+5. For confidence: be honest. Use a lower number (40-60) if the evidence is ambiguous or signals conflict. Use a higher number (75-92) only if multiple signals consistently point to the same cause. Do not default to a high number.
+
+Respond with ONLY this JSON — no markdown, no explanation outside the JSON:
 {
-  "root_cause": "1-2 plain English sentences explaining what caused the crash",
-  "suggested_fix": "1-2 plain English sentences describing the fix",
+  "root_cause": "1-2 plain-English sentences. If logs revealed the trigger, cite the specific log line or timestamp.",
+  "suggested_fix": "1-2 plain-English sentences — concrete and actionable.",
   "analysis_source": "live",
-  "confidence": <integer 0-100 representing how confident you are in this root cause based on the evidence strength>,
+  "confidence": <integer 0-100>,
+  "evidence_used": <array containing only the signals you actually used — choose from: "stack_trace", "logs", "memory", "thermal", "performance", "capture_context">,
   "evidence": [
-    "cite specific evidence: stack trace line, log entry, or metric that supports the root cause",
-    "second piece of specific evidence with source (e.g. 'stack_trace.txt line 3', 'logcat at 11:04:29')",
-    "third piece of specific evidence"
+    "Specific observation from signal X at timestamp/line Y that supports the root cause",
+    "Second observation — different signal or different aspect of same signal",
+    "Third observation — note any signal that contradicted or added nuance"
   ]
 }`;
 
@@ -236,13 +299,31 @@ async function callAI(apiKey, prompt) {
   const client = new Anthropic({ apiKey });
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 600,
+    max_tokens: 800,
     messages: [{ role: 'user', content: prompt }]
   });
   const text = msg.content[0].text.trim();
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('No JSON in AI response');
-  return JSON.parse(jsonMatch[0]);
+  const result = JSON.parse(jsonMatch[0]);
+
+  // Normalise: ensure evidence_used is an array of known strings, never fabricated
+  const VALID_SIGNALS = ['stack_trace', 'logs', 'memory', 'thermal', 'performance', 'capture_context'];
+  if (!Array.isArray(result.evidence_used)) {
+    result.evidence_used = null; // omit rather than fabricate
+  } else {
+    result.evidence_used = result.evidence_used.filter(s => VALID_SIGNALS.includes(s));
+    if (result.evidence_used.length === 0) result.evidence_used = null;
+  }
+
+  // Normalise confidence: must be integer 0-100 or null
+  if (typeof result.confidence !== 'number' || result.confidence < 0 || result.confidence > 100) {
+    result.confidence = null;
+  } else {
+    result.confidence = Math.round(result.confidence);
+  }
+
+  return result;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

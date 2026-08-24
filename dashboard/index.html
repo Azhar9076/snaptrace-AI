@@ -1532,21 +1532,29 @@ body {
 
       <!-- Root cause hero -->
       <div class="ai-hero-card">
-        <div class="ai-source-badge ai-source-cached" id="diag-source-badge">⚡ Analysing…</div>
+        <div class="flex-row between wrap gap-8" style="margin-bottom:10px; align-items:flex-start;">
+          <div class="ai-source-badge ai-source-cached" id="diag-source-badge">⚡ Analysing…</div>
+          <!-- Confidence inline badge — only rendered by JS when value present -->
+          <div id="diag-confidence-inline" style="display:none; font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px; letter-spacing:0.04em; white-space:nowrap;"></div>
+        </div>
         <div class="t-meta" style="margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700; color:var(--primary);">Root Cause Assessment</div>
         <div class="ai-root-cause" id="diag-root-cause">
           <div class="ai-loading"><span></span><span></span><span></span></div>
         </div>
-        <!-- Confidence score — only shown when AI returns it -->
-        <div id="diag-confidence-row" style="display:none; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
-          <div style="font-size:11px; color:var(--text-2); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">AI Confidence</div>
+        <!-- Evidence used row — only rendered by JS when value present -->
+        <div id="diag-evidence-used-row" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
+          <div style="font-size:10px; color:var(--text-3); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Signals Used</div>
+          <div id="diag-evidence-used-tags" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+        </div>
+        <!-- Confidence bar — only rendered by JS when value present -->
+        <div id="diag-confidence-row" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
           <div style="display:flex; align-items:center; gap:10px;">
-            <div style="flex:1; height:6px; background:var(--surface-3); border-radius:99px; overflow:hidden;">
+            <div style="flex:1; height:4px; background:var(--surface-3); border-radius:99px; overflow:hidden;">
               <div id="diag-confidence-bar" style="height:100%; background:var(--primary); border-radius:99px; width:0%; transition:width 1s ease;"></div>
             </div>
-            <span id="diag-confidence-pct" style="font-size:16px; font-weight:800; color:var(--primary); font-variant-numeric:tabular-nums; white-space:nowrap;"></span>
+            <span id="diag-confidence-pct" style="font-size:13px; font-weight:700; color:var(--primary); font-variant-numeric:tabular-nums; white-space:nowrap;"></span>
           </div>
-          <div style="font-size:10px; color:var(--text-3); margin-top:4px;">Based on evidence strength from this capture — not a statistical guarantee</div>
+          <div style="font-size:10px; color:var(--text-3); margin-top:3px;">AI confidence based on evidence completeness — not a statistical guarantee</div>
         </div>
       </div>
 
@@ -2587,23 +2595,61 @@ function populateDiagnosis(m, ai) {
   const fix = document.getElementById('diag-fix');
   if (fix) fix.textContent = diagAi?.suggested_fix || 'Start laptop-server with a valid ANTHROPIC_API_KEY to generate a live suggested fix.';
 
-  // Confidence score — only show when AI actually returns a number
-  const confRow = document.getElementById('diag-confidence-row');
-  const confBar = document.getElementById('diag-confidence-bar');
-  const confPct = document.getElementById('diag-confidence-pct');
-  if (confRow && confBar && confPct) {
-    const conf = diagAi?.confidence;
-    if (typeof conf === 'number' && conf >= 0 && conf <= 100) {
-      confRow.style.display = 'block';
-      confPct.textContent = conf + '%';
-      // Animate bar after a short delay
-      setTimeout(() => { confBar.style.width = conf + '%'; }, 150);
-      // Color the bar by confidence level
-      const color = conf >= 80 ? 'var(--green)' : conf >= 55 ? 'var(--primary)' : 'var(--orange)';
+  // Confidence — inline badge (small, next to source badge) + bar below
+  const confInline = document.getElementById('diag-confidence-inline');
+  const confRow    = document.getElementById('diag-confidence-row');
+  const confBar    = document.getElementById('diag-confidence-bar');
+  const confPct    = document.getElementById('diag-confidence-pct');
+  const conf       = typeof diagAi?.confidence === 'number' && diagAi.confidence >= 0 && diagAi.confidence <= 100
+                     ? Math.round(diagAi.confidence) : null;
+
+  if (conf !== null) {
+    const color = conf >= 75 ? 'var(--green)' : conf >= 50 ? 'var(--primary)' : 'var(--orange)';
+    const bgColor = conf >= 75 ? 'var(--green-dim)' : conf >= 50 ? 'var(--primary-dim)' : 'rgba(249,115,22,0.15)';
+    // Inline badge
+    if (confInline) {
+      confInline.style.display  = 'block';
+      confInline.style.color    = color;
+      confInline.style.background = bgColor;
+      confInline.style.border   = `1px solid ${color.replace(')', ', 0.3)').replace('var(', 'var(')}`;
+      confInline.textContent    = `Confidence: ${conf}%`;
+    }
+    // Bar
+    if (confRow && confBar && confPct) {
+      confRow.style.display    = 'block';
+      confPct.textContent      = conf + '%';
+      confPct.style.color      = color;
       confBar.style.background = color;
-      confPct.style.color = color;
+      setTimeout(() => { confBar.style.width = conf + '%'; }, 150);
+    }
+  } else {
+    if (confInline) confInline.style.display = 'none';
+    if (confRow)    confRow.style.display    = 'none';
+  }
+
+  // Evidence used tags — only render signals actually listed by the AI
+  const euRow  = document.getElementById('diag-evidence-used-row');
+  const euTags = document.getElementById('diag-evidence-used-tags');
+  const eu     = Array.isArray(diagAi?.evidence_used) && diagAi.evidence_used.length > 0
+                 ? diagAi.evidence_used : null;
+
+  if (euRow && euTags) {
+    if (eu) {
+      const SIGNAL_LABELS = {
+        stack_trace:     'Stack Trace',
+        logs:            'Logcat',
+        memory:          'Memory',
+        thermal:         'Thermal',
+        performance:     'Performance',
+        capture_context: 'Capture Context',
+      };
+      euTags.innerHTML = eu.map(s => {
+        const label = SIGNAL_LABELS[s] || s;
+        return `<span style="font-size:10px; font-weight:600; padding:2px 9px; border-radius:99px; background:var(--cyan-dim); color:var(--cyan); border:1px solid rgba(34,211,238,0.2); white-space:nowrap;">${escHtml(label)}</span>`;
+      }).join('');
+      euRow.style.display = 'block';
     } else {
-      confRow.style.display = 'none';
+      euRow.style.display = 'none';
     }
   }
 
