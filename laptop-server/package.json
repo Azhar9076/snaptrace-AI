@@ -11,6 +11,6 @@
     "multer": "1.4.5-lts.1",
     "cors": "2.8.5",
     "adm-zip": "0.5.10",
-    "@anthropic-ai/sdk": "0.20.9"
+    "openai": "4.47.1"
   }
 }

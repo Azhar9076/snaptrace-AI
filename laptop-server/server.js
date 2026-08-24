@@ -10,9 +10,9 @@ const AdmZip   = require('adm-zip');
 const fs       = require('fs');
 const path     = require('path');
 
-// Optional: Anthropic SDK — only used if ANTHROPIC_API_KEY is set
-let Anthropic;
-try { Anthropic = require('@anthropic-ai/sdk'); } catch (e) { Anthropic = null; }
+// Optional: OpenAI-compatible SDK for Grok — only used if XAI_API_KEY is set
+let OpenAI;
+try { OpenAI = require('openai'); } catch (e) { OpenAI = null; }
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -177,9 +177,9 @@ async function analyzePackage() {
   const stackTrace = fs.existsSync(stPath)   ? fs.readFileSync(stPath, 'utf8')                  : '';
 
   // If no API key, fall back to cached immediately
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || !Anthropic) {
-    console.log('[AI] No API key — using cached response');
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey || !OpenAI) {
+    console.log('[AI] No XAI_API_KEY — using cached response');
     if (fs.existsSync(CACHED_RESP)) {
       const cached = JSON.parse(fs.readFileSync(CACHED_RESP, 'utf8'));
       cached.analysis_source = 'cached';
@@ -296,21 +296,24 @@ Respond with ONLY this JSON — no markdown, no explanation outside the JSON:
 }
 
 async function callAI(apiKey, prompt) {
-  const client = new Anthropic({ apiKey });
-  const msg = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 800,
-    messages: [{ role: 'user', content: prompt }]
+  const client = new OpenAI({
+    apiKey,
+    baseURL: 'https://api.x.ai/v1',
   });
-  const text = msg.content[0].text.trim();
+  const completion = await client.chat.completions.create({
+    model: 'grok-3-mini',
+    max_tokens: 800,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const text = completion.choices[0].message.content.trim();
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('No JSON in AI response');
+  if (!jsonMatch) throw new Error('No JSON in Grok response');
   const result = JSON.parse(jsonMatch[0]);
 
   // Normalise: ensure evidence_used is an array of known strings, never fabricated
   const VALID_SIGNALS = ['stack_trace', 'logs', 'memory', 'thermal', 'performance', 'capture_context'];
   if (!Array.isArray(result.evidence_used)) {
-    result.evidence_used = null; // omit rather than fabricate
+    result.evidence_used = null;
   } else {
     result.evidence_used = result.evidence_used.filter(s => VALID_SIGNALS.includes(s));
     if (result.evidence_used.length === 0) result.evidence_used = null;
