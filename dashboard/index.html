@@ -1123,12 +1123,12 @@ body {
           <div class="dot-pulse dot-red"></div>
           CRASH DETECTED
         </div>
-        <div class="crash-exception" id="ov-exception">NullPointerException</div>
-        <div class="crash-location" id="ov-location">com.snaptrace.demoapp.MainActivity.updateCounterDisplay · line 87</div>
+        <div class="crash-exception" id="ov-exception">—</div>
+        <div class="crash-location" id="ov-location">—</div>
         <div class="crash-meta-row">
           <span class="badge badge-red" id="ov-trigger-badge">⚡ Crash Trigger</span>
-          <span class="badge badge-gray" id="ov-device-badge">iQOO Neo 9 Pro</span>
-          <span class="badge badge-gray" id="ov-android-badge">Android 14</span>
+          <span class="badge badge-gray" id="ov-device-badge">—</span>
+          <span class="badge badge-gray" id="ov-android-badge">—</span>
           <span class="badge badge-yellow" id="ov-time-badge">—</span>
         </div>
       </div>
@@ -1142,8 +1142,8 @@ body {
             </div>
             <span class="t-meta">Used RAM</span>
           </div>
-          <div class="metric-value t-yellow" id="ov-mem-used">8,876</div>
-          <div class="metric-label">MB · <span id="ov-mem-pct">72%</span> of <span id="ov-mem-total">12,288 MB</span></div>
+          <div class="metric-value t-yellow" id="ov-mem-used">—</div>
+          <div class="metric-label">MB · <span id="ov-mem-pct">—</span> of <span id="ov-mem-total">—</span></div>
         </div>
 
         <div class="metric-card">
@@ -1217,7 +1217,7 @@ body {
       <div class="card card-p flex-col gap-8">
         <div class="flex-row between wrap gap-8">
           <span class="t-section" style="font-size:16px">Capture Status</span>
-          <span class="badge badge-green" id="ov-capture-method">Screenshot Burst · 14 frames</span>
+          <span class="badge badge-green" id="ov-capture-method">—</span>
         </div>
         <div class="flex-row gap-8" style="font-size:13px; color:var(--text-2)">
           <span>Package: <strong id="ov-pkg-size" class="t-yellow">—</strong></span>
@@ -1312,10 +1312,10 @@ body {
       <div class="flex-row between wrap gap-8">
         <div class="flex-col gap-4">
           <div class="t-title">Crash Replay</div>
-          <div class="t-meta" id="rp-subtitle">Screenshot burst · <span id="rp-frame-total">14</span> frames @ ~2 fps</div>
+          <div class="t-meta" id="rp-subtitle">— · <span id="rp-frame-total">—</span> frames @ ~2 fps</div>
         </div>
         <div class="flex-row gap-8 wrap">
-          <span class="badge badge-red" id="rp-crash-badge">⚡ Crash Frame: #<span id="rp-crash-frame-num">11</span></span>
+          <span class="badge badge-red" id="rp-crash-badge">⚡ Crash Frame: #<span id="rp-crash-frame-num">—</span></span>
           <span class="badge badge-cyan" id="rp-method-badge">updateCounterDisplay()</span>
         </div>
       </div>
@@ -1373,15 +1373,15 @@ body {
             <div class="flex-col gap-8">
               <div>
                 <div class="t-meta" style="margin-bottom:3px">Exception</div>
-                <div style="font-size:13px; font-weight:700; color:var(--red)" id="rp-exception">NullPointerException</div>
+                <div style="font-size:13px; font-weight:700; color:var(--red)" id="rp-exception">—</div>
               </div>
               <div>
                 <div class="t-meta" style="margin-bottom:3px">Class</div>
-                <div style="font-size:12px; font-family:monospace; color:var(--cyan); word-break:break-all" id="rp-class">MainActivity</div>
+                <div style="font-size:12px; font-family:monospace; color:var(--cyan); word-break:break-all" id="rp-class">—</div>
               </div>
               <div>
                 <div class="t-meta" style="margin-bottom:3px">Method · Line</div>
-                <div style="font-size:12px; font-family:monospace; color:var(--text)" id="rp-method">updateCounterDisplay · :87</div>
+                <div style="font-size:12px; font-family:monospace; color:var(--text)" id="rp-method">—</div>
               </div>
               <div>
                 <div class="t-meta" style="margin-bottom:3px">Timestamp</div>
@@ -1409,9 +1409,9 @@ body {
             <div class="flex-row between">
               <div>
                 <div class="t-meta">Responsiveness</div>
-                <div style="font-size:20px; font-weight:800; color:var(--cyan)" id="rp-fps-val">58.4 FPS</div>
+                <div style="font-size:20px; font-weight:800; color:var(--cyan)" id="rp-fps-val">—</div>
               </div>
-              <span class="badge badge-green" id="rp-resp-badge">Stable</span>
+              <span class="badge badge-green" id="rp-resp-badge">—</span>
             </div>
           </div>
         </div>
@@ -1532,7 +1532,7 @@ body {
 
       <!-- Root cause hero -->
       <div class="ai-hero-card">
-        <div class="ai-source-badge ai-source-cached" id="diag-source-badge">⚡ Cached Analysis</div>
+        <div class="ai-source-badge ai-source-cached" id="diag-source-badge">⚡ Analysing…</div>
         <div class="t-meta" style="margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em; font-weight:700; color:var(--primary);">Root Cause Assessment</div>
         <div class="ai-root-cause" id="diag-root-cause">
           <div class="ai-loading"><span></span><span></span><span></span></div>
@@ -1581,13 +1581,11 @@ body {
         </div>
         <div style="display:flex; flex-direction:column; gap:8px">
           <div class="flex-row gap-8 wrap">
-            <span class="badge badge-red" id="diag-exception-badge">NullPointerException</span>
-            <span class="badge badge-cyan" id="diag-class-badge">MainActivity</span>
-            <span class="badge badge-gray" id="diag-method-badge">updateCounterDisplay · :87</span>
+            <span class="badge badge-red" id="diag-exception-badge">—</span>
+            <span class="badge badge-cyan" id="diag-class-badge">—</span>
+            <span class="badge badge-gray" id="diag-method-badge">—</span>
           </div>
-          <div style="font-size:13px; color:var(--text-2); line-height:1.6" id="diag-message">
-            Attempt to invoke virtual method on a null object reference
-          </div>
+          <div style="font-size:13px; color:var(--text-2); line-height:1.6" id="diag-message">—</div>
         </div>
       </div>
 
@@ -1703,7 +1701,7 @@ body {
               <tr><td>Total Transfer</td><td id="pt-tot">—</td></tr>
               <tr><td>Server IP</td><td id="pt-ip">—</td></tr>
               <tr><td>Network</td><td id="pt-net">—</td></tr>
-              <tr><td>Files in ZIP</td><td id="pt-files">manifest.json, stack_trace.txt, logs.txt, 14× frame_NNN.jpg</td></tr>
+              <tr><td>Files in ZIP</td><td id="pt-files">—</td></tr>
             </table>
           </div>
         </div>
