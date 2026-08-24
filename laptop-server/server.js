@@ -73,6 +73,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
+// ─── Root redirect → dashboard ───────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.redirect('/dashboard/index.html');
+});
+
 // ─── POST /upload — receive crash package ────────────────────────────────────
 app.post('/upload', upload.single('package'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file received' });
