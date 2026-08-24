@@ -1,0 +1,17 @@
+# Force LF line endings for all text files — prevents Windows CRLF from corrupting UTF-8
+* text=auto eol=lf
+
+# Explicitly force LF for web files (HTML/JS/CSS/JSON contain multi-byte UTF-8)
+*.html text eol=lf
+*.js   text eol=lf
+*.css  text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+
+# Binary files — no line ending conversion
+*.jpg  binary
+*.png  binary
+*.gif  binary
+*.zip  binary
+*.ico  binary

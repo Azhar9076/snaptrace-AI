@@ -24,8 +24,44 @@
       "dest": "laptop-server/server.js"
     },
     {
-      "src": "/(.*)",
+      "src": "/",
+      "dest": "dashboard/index.html"
+    },
+    {
+      "src": "/dashboard",
+      "dest": "dashboard/index.html"
+    },
+    {
+      "src": "/dashboard/",
+      "dest": "dashboard/index.html"
+    },
+    {
+      "src": "/(.*\\.(html|css|js|json|png|jpg|gif|ico|svg|woff|woff2|ttf))",
       "dest": "dashboard/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "dashboard/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/html; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/(.*\\.js)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+      ]
     }
   ]
 }
