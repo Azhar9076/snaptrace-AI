@@ -199,12 +199,17 @@ ${stackTrace}
 RECENT LOGS (last 50 lines):
 ${logs}
 
-Respond with this exact JSON structure:
+Respond with this exact JSON structure — no extra keys, no markdown:
 {
   "root_cause": "1-2 plain English sentences explaining what caused the crash",
   "suggested_fix": "1-2 plain English sentences describing the fix",
   "analysis_source": "live",
-  "evidence": ["key evidence point 1", "key evidence point 2", "key evidence point 3"]
+  "confidence": <integer 0-100 representing how confident you are in this root cause based on the evidence strength>,
+  "evidence": [
+    "cite specific evidence: stack trace line, log entry, or metric that supports the root cause",
+    "second piece of specific evidence with source (e.g. 'stack_trace.txt line 3', 'logcat at 11:04:29')",
+    "third piece of specific evidence"
+  ]
 }`;
 
   // Race: AI call vs 2s timeout → use cached if timeout wins
@@ -231,7 +236,7 @@ async function callAI(apiKey, prompt) {
   const client = new Anthropic({ apiKey });
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 512,
+    max_tokens: 600,
     messages: [{ role: 'user', content: prompt }]
   });
   const text = msg.content[0].text.trim();
