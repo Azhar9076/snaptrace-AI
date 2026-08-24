@@ -1348,7 +1348,7 @@ body {
               <span style="font-size:11px; color:var(--text-2)">▼ expand</span>
             </div>
             <div class="stack-trace-body" id="st-body">
-              <pre class="stack-trace-text" id="st-content">Loading…</pre>
+              <pre class="stack-trace-text" id="st-content">Fetching stack trace…</pre>
             </div>
           </div>
 
@@ -1575,7 +1575,7 @@ body {
         </div>
         <div class="collapsible-body">
           <div class="collapsible-inner" style="padding:0">
-            <pre class="log-viewer" id="details-stack">Loading…</pre>
+            <pre class="log-viewer" id="details-stack">Fetching stack trace…</pre>
           </div>
         </div>
       </div>
@@ -1592,7 +1592,7 @@ body {
         </div>
         <div class="collapsible-body">
           <div class="collapsible-inner" style="padding:0">
-            <div class="log-viewer" id="details-logs">Loading…</div>
+            <div class="log-viewer" id="details-logs">Fetching logs…</div>
           </div>
         </div>
       </div>
@@ -1984,6 +1984,15 @@ function populateReplayMeta(m) {
     const rb = document.getElementById('rp-resp-badge');
     if (rb) rb.textContent = m.performance.responsiveness || 'Stable';
   }
+  // Update subtitle with real capture method and frame count
+  const sub = document.getElementById('rp-subtitle');
+  if (sub) {
+    const method = (m.capture_method || 'screenshot burst').replace('_', ' ');
+    sub.textContent = `${method} · ${m.frame_count ?? '—'} frames @ ~2 fps`;
+  }
+  // Pre-populate the stack trace panel so it's ready before the tab is clicked
+  const stContent = document.getElementById('st-content');
+  if (stContent && G.stackTrace) stContent.textContent = G.stackTrace;
   buildFilmstrip(m);
 }
 
@@ -2018,9 +2027,15 @@ function renderReplay() {
   const m = G.manifest;
   buildFilmstrip(m);
   jumpToFrame(0);
-  // Stack trace
+  // Stack trace — colorized if available, plain text fallback, never bare '—'
   const stContent = document.getElementById('st-content');
-  if (stContent) stContent.textContent = G.stackTrace || '—';
+  if (stContent) {
+    if (G.stackTrace) {
+      stContent.innerHTML = colorizeStack(G.stackTrace);
+    } else {
+      stContent.textContent = 'Stack trace unavailable from this capture';
+    }
+  }
   // Scrubber markers
   addScrubberMarkers(m);
 }
@@ -2140,10 +2155,20 @@ document.getElementById('st-toggle')?.addEventListener('click', () => {
 function populateAnalyticsMeta(m) {
   if (!m) return;
   const pm = m.memory, pt = m.thermal, pp = m.performance;
-  setText('pa-peak-mem', pm ? Math.max(...pm.series.map(s=>s.used)).toLocaleString() : 'Unavailable from this capture');
-  setText('pa-cpu-temp', pt?.cpu_temp_c ?? 'Unavailable from this capture');
-  setText('pa-fps', pp?.avg_fps ?? 'Unavailable from this capture');
-  setText('pa-frames', m.frame_count ?? 'Unavailable from this capture');
+
+  // Peak RAM — guard against empty series producing -Infinity
+  if (pm && Array.isArray(pm.series) && pm.series.length > 0) {
+    const peak = Math.max(...pm.series.map(s => s.used));
+    setText('pa-peak-mem', isFinite(peak) ? peak.toLocaleString() : (pm.used_ram_mb?.toLocaleString() ?? 'Unavailable from this capture'));
+  } else if (pm && pm.used_ram_mb != null) {
+    setText('pa-peak-mem', pm.used_ram_mb.toLocaleString());
+  } else {
+    setText('pa-peak-mem', 'Unavailable from this capture');
+  }
+
+  setText('pa-cpu-temp', pt?.cpu_temp_c != null ? pt.cpu_temp_c : 'Unavailable from this capture');
+  setText('pa-fps',      pp?.avg_fps     != null ? pp.avg_fps     : 'Unavailable from this capture');
+  setText('pa-frames',   m.frame_count   != null ? m.frame_count  : 'Unavailable from this capture');
 }
 
 function drawAllCharts() {
@@ -2439,38 +2464,57 @@ function attachChartHover(canvas, points, toX, toY, color, rowsFn, labelFn) {
 function populateDiagnosis(m, ai) {
   if (!m) return;
 
-  // Source badge
+  // Use MOCK_AI as ultimate fallback if ai is null
+  const diagAi = ai || (typeof MOCK_AI !== 'undefined' ? MOCK_AI : null);
+
+  // Source badge — always set, never left as HTML default
   const badge = document.getElementById('diag-source-badge');
-  if (badge && ai) {
-    const isLive = ai.analysis_source === 'live';
-    badge.className = 'ai-source-badge ' + (isLive ? 'ai-source-live' : 'ai-source-cached');
-    badge.textContent = isLive ? '⚡ Live AI Analysis' : '⚡ Cached Analysis';
+  if (badge) {
+    if (!ai) {
+      // No live or cached AI — showing embedded demo data
+      badge.className = 'ai-source-badge ai-source-cached';
+      badge.textContent = '⚡ Demo Analysis';
+    } else {
+      const isLive = ai.analysis_source === 'live';
+      badge.className = 'ai-source-badge ' + (isLive ? 'ai-source-live' : 'ai-source-cached');
+      badge.textContent = isLive ? '⚡ Live AI Analysis' : '⚡ Cached Analysis';
+    }
   }
 
-  // Root cause
+  // Root cause — always populated
   const rc = document.getElementById('diag-root-cause');
-  if (rc) rc.textContent = ai?.root_cause || 'AI analysis unavailable — check server connection.';
+  if (rc) rc.textContent = diagAi?.root_cause || 'AI analysis unavailable — check server connection.';
 
-  // Evidence list
+  // Evidence list — AI evidence first, then computed from manifest
   const ev = document.getElementById('diag-evidence');
-  if (ev && ai?.evidence?.length) {
-    ev.innerHTML = ai.evidence.map(e =>
-      `<li class="evidence-item">${escHtml(e)}</li>`
-    ).join('');
-  } else if (ev) {
-    ev.innerHTML = `
-      <li class="evidence-item">${escHtml(m.exception_type || '—')} thrown at ${escHtml(m.exception_class || '—')}.${escHtml(m.exception_method || '—')}:${m.exception_line || '—'}</li>
-      <li class="evidence-item">Memory at crash: ${m.memory?.used_ram_mb?.toLocaleString() || '—'} MB / ${m.memory?.total_ram_mb?.toLocaleString() || '—'} MB</li>
-      <li class="evidence-item">Thermal status: ${m.thermal?.status_label || '—'} (CPU ${m.thermal?.cpu_temp_c || '—'}°C)</li>
-      <li class="evidence-item">Crash trigger: ${m.trigger_type || '—'} · Captured ${m.frame_count || '—'} frames</li>`;
+  if (ev) {
+    if (diagAi?.evidence?.length) {
+      ev.innerHTML = diagAi.evidence.map(e =>
+        `<li class="evidence-item">${escHtml(e)}</li>`
+      ).join('');
+    } else {
+      // Build evidence from real manifest fields — never shows '—' for known fields
+      const memStr = m.memory?.used_ram_mb != null
+        ? `${m.memory.used_ram_mb.toLocaleString()} MB / ${(m.memory.total_ram_mb || '?').toLocaleString()} MB`
+        : 'unavailable';
+      const thermalStr = m.thermal?.status_label
+        ? `${m.thermal.status_label} (CPU ${m.thermal.cpu_temp_c}°C)`
+        : 'unavailable';
+      ev.innerHTML = `
+        <li class="evidence-item">${escHtml(m.exception_type || '—')} at ${escHtml(m.exception_class || '—')}.${escHtml(m.exception_method || '—')}:${m.exception_line || '—'}</li>
+        <li class="evidence-item">Memory at crash: ${memStr}</li>
+        <li class="evidence-item">Thermal status: ${thermalStr}</li>
+        <li class="evidence-item">Crash trigger: ${escHtml(m.trigger_type || '—')} · ${m.frame_count ?? '—'} frames captured</li>`;
+    }
   }
 
-  // Suggested fix
+  // Suggested fix — always populated
   const fix = document.getElementById('diag-fix');
-  if (fix) fix.textContent = ai?.suggested_fix || 'Run the server with a valid ANTHROPIC_API_KEY to get a live suggested fix.';
+  if (fix) fix.textContent = diagAi?.suggested_fix || 'Start laptop-server with a valid ANTHROPIC_API_KEY to generate a live suggested fix.';
 
-  // Crash location badges
-  const eb = document.getElementById('diag-exception-badge'); if (eb) eb.textContent = m.exception_type || '—';
+  // Crash location badges — always populated from manifest
+  const eb = document.getElementById('diag-exception-badge');
+  if (eb) eb.textContent = m.exception_type || '—';
   const cb = document.getElementById('diag-class-badge');
   if (cb) cb.textContent = (m.exception_class || '—').split('.').pop();
   const mb = document.getElementById('diag-method-badge');
@@ -2502,6 +2546,10 @@ function populateDetails(m) {
   setText('pt-tot',  fmtMs(m.transfer_total_ms));
   setText('pt-ip',   m.server_ip ? `${m.server_ip}:${m.server_port || 3000}` : '—');
   setText('pt-net',  m.network_ssid || '—');
+  // Dynamic file list from real manifest data
+  const frameCount = m.frame_count ?? 0;
+  const frameExt  = m.capture_method === 'video' ? 'mp4' : 'jpg';
+  setText('pt-files', `manifest.json, stack_trace.txt, logs.txt, ${frameCount}× frame_NNN.${frameExt}`);
 
   // Frame count badge
   const fcb = document.getElementById('col-frame-count');
@@ -2543,13 +2591,34 @@ function buildDetailsThumbs(m) {
 
 // ─── Logs renderer ─────────────────────────────────────────────────────────────
 function populateLogs() {
-  // Stack trace in details
+  // Stack trace — Event Details page + Crash Replay panel
   const ds = document.getElementById('details-stack');
-  if (ds && G.stackTrace) ds.innerHTML = colorizeStack(G.stackTrace);
+  if (ds) {
+    if (G.stackTrace) {
+      ds.innerHTML = colorizeStack(G.stackTrace);
+    } else {
+      ds.textContent = 'Stack trace unavailable from this capture';
+    }
+  }
+  // Also update the Crash Replay stack panel (pre-populate so it's ready before tab click)
+  const stContent = document.getElementById('st-content');
+  if (stContent) {
+    if (G.stackTrace) {
+      stContent.innerHTML = colorizeStack(G.stackTrace);
+    } else {
+      stContent.textContent = 'Stack trace unavailable from this capture';
+    }
+  }
 
-  // Logs in details
+  // Application logs — Event Details page
   const dl = document.getElementById('details-logs');
-  if (dl && G.logs) dl.innerHTML = colorizeLogs(G.logs);
+  if (dl) {
+    if (G.logs) {
+      dl.innerHTML = colorizeLogs(G.logs);
+    } else {
+      dl.textContent = 'Logs unavailable from this capture';
+    }
+  }
 }
 
 function colorizeStack(text) {
